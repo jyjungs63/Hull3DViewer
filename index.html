@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>선체 3D 생산도면</title>
+    <!-- jsTree CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css"
+    />
+
+    <!-- jQuery (필수) -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+    <!-- jsTree JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+    <script src="3dData.js"></script>
+    <!-- Three.js + GLTFLoader + OrbitControls -->
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js",
+          "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js",
+          "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.169/examples/jsm/controls/OrbitControls.js",
+          "three/examples/jsm/loaders/DRACOLoader.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/DRACOLoader.js",
+          "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js",
+          "three/examples/jsm/postprocessing/EffectComposer.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/EffectComposer.js",
+          "three/examples/jsm/postprocessing/RenderPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js",
+          "three/examples/jsm/postprocessing/OutputPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutputPass.js",
+          "three/examples/jsm/libs/lil-gui.module.min.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/lil-gui.module.min.js",
+          "three/examples/jsm/postprocessing/OutlinePass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutlinePass.js",
+          "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js"
+        }
+      }
+    </script>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+  </head>
+  <body>
+    <div class="container">
+      <div class="menubar">
+        <h3>📁 Assembly</h3>
+        <div class="menu-controls">
+          <button class="menu-btn" onclick="resetLayout()">🔄 Reset</button>
+          <button class="menu-btn" onclick="toggleFullscreen()">
+            ⛶ Fullscreen
+          </button>
+          <button class="menu-btn" onclick="saveLayout()">💾 Save</button>
+        </div>
+      </div>
+
+      <div class="main-content">
+        <div class="left-panel" id="leftPanel">
+          <button class="toggle-btn" onclick="toggleLeftPanel()">◀</button>
+          <div class="panel-content" style="display: flex; flex-direction: column; height: 100%; align-items: center;">
+            <!-- 검색 폼 (width 80%) -->
+            <div style="flex: none; width: 90%; padding: 10px 12px; border-bottom: 1px solid #ddd">
+              <form id="searchForm" onsubmit="return false;" style="width: 100%;">
+                <!-- 승선 -->
+                <div style="margin-bottom: 10px">
+                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">호선</label>
+                  <div style="display: flex; gap: 5px">
+                    <input type="text" id="승선" placeholder="201" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
+                    <button type="button" onclick="search승선()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">☰</button>
+                  </div>
+                </div>
+
+                <!-- 설계부서 -->
+                <div style="margin-bottom: 10px">
+                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">블럭</label>
+                  <div style="display: flex; gap: 5px">
+                    <input type="text" id="설계부서" placeholder="F212C" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
+                    <button type="button" onclick="select설계부서()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">🔍</button>
+                  </div>
+                </div>
+
+                <!-- 도면번호 -->
+                <div style="margin-bottom: 10px">
+                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면번호</label>
+                  <div style="display: flex; gap: 5px">
+                    <input type="text" id="도면번호" placeholder="" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
+                    <button type="button" onclick="search도면번호()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">🔍</button>
+                  </div>
+                </div>
+
+                <!-- 도면명 -->
+                <div style="margin-bottom: 10px">
+                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면명</label>
+                  <input type="text" id="도면명" placeholder="" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
+                </div>
+              </form>
+            </div>
+
+            <!-- jsTree (남은 공간 모두 차지) -->
+            <div id="jstree" style="flex: 1; overflow: auto; padding: 0px" ></div>
+          </div>
+          <div class="resizer resizer-h-thin" data-resize="left"></div>
+        </div>
+
+        <div class="center-panel">
+          <div class="top-row">
+            <div id="view1" class="view-panel"></div>
+            <div class="resizer resizer-v-between" data-resize="view1-h"></div>
+            <div id="view2" class="view-panel">
+              <!-- <div class="resizer resizer-v-thin" data-resize="view1-v"></div> -->
+            </div>
+          </div>
+          <div class="resizer resizer-v" data-resize="topRow"></div>
+
+          <div class="bottom-row">
+            <div id="view3" class="view-panel"></div>
+            <div class="resizer resizer-v-between" data-resize="view3-h"></div>
+            <div id="images" class="view-panel">
+
+            </div>
+          </div>
+        </div>
+
+        <div class="right-panel" id="rightPanel">
+          <div class="right-top" id="rightTop"> 
+              <iframe src="index_view.html" style="width: 100%; height: 100%; border: none;"  > </iframe>
+              <div class="resizer resizer-v-thin" data-resize="rightTop"></div>
+          </div>
+          
+          <div class="right-bottom">Property Sheet</div>
+        </div>
+      </div>
+
+      <div class="console" id="console">
+        <div class="console-resizer" id="consoleResizer"></div>
+        <div id="myconsole">
+          <div class="console-header">
+            <span></span>
+            <button class="toggle-btn" onclick="toggleConsole()">▼</button>
+          </div>
+          <div class="console-content" style="margin-top: -30px"></div>
+        </div>
+      </div>
+    </div>
+    
+    <script type="module" src="main.js"></script>
+  </body>
+</html>

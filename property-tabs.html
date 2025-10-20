@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Property Sheet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .property-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .tab-header {
+            display: flex;
+            background: #e9ecef;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: #e9ecef;
+            border: none;
+            border-right: 1px solid #dee2e6;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button:last-child {
+            border-right: none;
+        }
+
+        .tab-button:hover {
+            background: #dee2e6;
+            color: #212529;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #3498db;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+            padding: 15px;
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .property-group {
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .property-group-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+
+        .property-row {
+            display: flex;
+            padding: 8px 15px;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 13px;
+        }
+
+        .property-row:last-child {
+            border-bottom: none;
+        }
+
+        .property-row:hover {
+            background: #f8f9fa;
+        }
+
+        .property-label {
+            flex: 0 0 140px;
+            font-weight: 500;
+            color: #495057;
+            padding-right: 10px;
+        }
+
+        .property-value {
+            flex: 1;
+            color: #212529;
+        }
+
+        .property-value input,
+        .property-value select {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .property-value input:focus,
+        .property-value select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #868e96;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        /* 스크롤바 스타일 */
+        .tab-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tab-content::-webkit-scrollbar-track {
+            background: #f1f3f5;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 4px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb:hover {
+            background: #868e96;
+        }
+    </style>
+</head>
+<body>
+    <div class="property-container">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="switchTab(event, 'general')">
+                📋 General
+            </button>
+            <button class="tab-button" onclick="switchTab(event, 'geometry')">
+                📐 Geometry
+            </button>
+            <button class="tab-button" onclick="switchTab(event, 'material')">
+                🎨 Material
+            </button>
+        </div>
+
+        <div class="tab-content">
+            <!-- General Tab -->
+            <div id="general" class="tab-pane active">
+                <div class="property-group">
+                    <div class="property-group-header">기본 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">객체 이름</div>
+                        <div class="property-value">
+                            <input type="text" value="BLOCK_F201" readonly>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">객체 타입</div>
+                        <div class="property-value">Assembly</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">레이어</div>
+                        <div class="property-value">
+                            <select>
+                                <option>HULL</option>
+                                <option>DECK</option>
+                                <option>BULKHEAD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">도면 번호</div>
+                        <div class="property-value">DWG-2024-001</div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">상태 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">생성 날짜</div>
+                        <div class="property-value">2024-01-15</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">수정 날짜</div>
+                        <div class="property-value">2024-10-15</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">작성자</div>
+                        <div class="property-value">홍길동</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">승인 상태</div>
+                        <div class="property-value">
+                            <select>
+                                <option>작업중</option>
+                                <option selected>검토중</option>
+                                <option>승인완료</option>
+                            </select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Geometry Tab -->
+            <div id="geometry" class="tab-pane">
+                <div class="property-group">
+                    <div class="property-group-header">치수</div>
+                    <div class="property-row">
+                        <div class="property-label">길이 (Length)</div>
+                        <div class="property-value">
+                            <input type="number" value="12500.00" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">폭 (Width)</div>
+                        <div class="property-value">
+                            <input type="number" value="8500.00" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">높이 (Height)</div>
+                        <div class="property-value">
+                            <input type="number" value="3200.00" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">부피 (Volume)</div>
+                        <div class="property-value">340.00 m³</div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">위치 (Position)</div>
+                    <div class="property-row">
+                        <div class="property-label">X 좌표</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Y 좌표</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Z 좌표</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.01"> mm
+                        </div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">회전 (Rotation)</div>
+                    <div class="property-row">
+                        <div class="property-label">X 회전</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.1"> °
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Y 회전</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.1"> °
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Z 회전</div>
+                        <div class="property-value">
+                            <input type="number" value="0.00" step="0.1"> °
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Material Tab -->
+            <div id="material" class="tab-pane">
+                <div class="property-group">
+                    <div class="property-group-header">재질 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">재질 등급</div>
+                        <div class="property-value">
+                            <select>
+                                <option>AH32</option>
+                                <option selected>AH36</option>
+                                <option>DH32</option>
+                                <option>DH36</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">두께 (Thickness)</div>
+                        <div class="property-value">
+                            <input type="number" value="12.0" step="0.5"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">재질 타입</div>
+                        <div class="property-value">Steel Plate</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">밀도 (Density)</div>
+                        <div class="property-value">7850 kg/m³</div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">중량 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">단위 중량</div>
+                        <div class="property-value">94.2 kg/m²</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">총 중량</div>
+                        <div class="property-value">8,547.5 kg</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">중심 (X)</div>
+                        <div class="property-value">6250.00 mm</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">중심 (Y)</div>
+                        <div class="property-value">4250.00 mm</div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">중심 (Z)</div>
+                        <div class="property-value">1600.00 mm</div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">표면 처리</div>
+                    <div class="property-row">
+                        <div class="property-label">코팅 타입</div>
+                        <div class="property-value">
+                            <select>
+                                <option>None</option>
+                                <option selected>Primer</option>
+                                <option>Paint</option>
+                                <option>Galvanizing</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">코팅 두께</div>
+                        <div class="property-value">
+                            <input type="number" value="80" step="10"> μm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">색상</div>
+                        <div class="property-value">
+                            <input type="color" value="#808080">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function switchTab(event, tabName) {
+            // 모든 탭 버튼에서 active 클래스 제거
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // 모든 탭 컨텐츠 숨기기
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabPanes.forEach(pane => {
+                pane.classList.remove('active');
+            });
+
+            // 클릭된 탭 버튼에 active 클래스 추가
+            event.currentTarget.classList.add('active');
+
+            // 선택된 탭 컨텐츠 표시
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // 입력 필드 변경 감지
+        document.querySelectorAll('input, select').forEach(element => {
+            element.addEventListener('change', function() {
+                console.log(`Property changed: ${this.value}`);
+                // 여기에 변경사항을 처리하는 로직 추가
+            });
+        });
+    </script>
+</body>
+</html>

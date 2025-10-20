@@ -1,0 +1,558 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Design System - Login</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            min-height: 550px;
+        }
+
+        .left-panel {
+            flex: 1;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 60px 40px;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+        }
+
+        .left-panel h1 {
+            font-size: 32px;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .left-panel p {
+            font-size: 16px;
+            line-height: 1.6;
+            opacity: 0.9;
+            margin-bottom: 30px;
+        }
+
+        .cad-icon {
+            font-size: 80px;
+            margin-bottom: 20px;
+        }
+
+        .feature-list {
+            text-align: left;
+            margin-top: 30px;
+        }
+
+        .feature-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 15px;
+            font-size: 14px;
+        }
+
+        .feature-item::before {
+            content: "✓";
+            margin-right: 10px;
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .right-panel {
+            flex: 1;
+            padding: 60px 50px;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .form-container {
+            width: 100%;
+        }
+
+        .form-container.hidden {
+            display: none;
+        }
+
+        .form-title {
+            font-size: 28px;
+            color: #2c3e50;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        .form-subtitle {
+            color: #7f8c8d;
+            margin-bottom: 30px;
+            font-size: 14px;
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            color: #2c3e50;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 12px 15px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .form-group input::placeholder {
+            color: #bdc3c7;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            width: auto;
+            margin-right: 8px;
+        }
+
+        .checkbox-group label {
+            margin: 0;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px;
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 15px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .btn-secondary {
+            background: white;
+            color: #667eea;
+            border: 2px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .form-footer {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 14px;
+            color: #7f8c8d;
+        }
+
+        .form-footer a {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+            cursor: pointer;
+        }
+
+        .form-footer a:hover {
+            text-decoration: underline;
+        }
+
+        .divider {
+            display: flex;
+            align-items: center;
+            text-align: center;
+            margin: 20px 0;
+            color: #7f8c8d;
+            font-size: 14px;
+        }
+
+        .divider::before,
+        .divider::after {
+            content: '';
+            flex: 1;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .divider span {
+            padding: 0 10px;
+        }
+
+        .alert {
+            padding: 12px 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            display: none;
+        }
+
+        .alert.show {
+            display: block;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .password-strength {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .password-strength-bar {
+            height: 100%;
+            width: 0;
+            transition: all 0.3s ease;
+        }
+
+        .strength-weak {
+            width: 33%;
+            background: #e74c3c;
+        }
+
+        .strength-medium {
+            width: 66%;
+            background: #f39c12;
+        }
+
+        .strength-strong {
+            width: 100%;
+            background: #27ae60;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+            }
+
+            .left-panel {
+                padding: 40px 30px;
+            }
+
+            .right-panel {
+                padding: 40px 30px;
+            }
+
+            .left-panel h1 {
+                font-size: 24px;
+            }
+
+            .form-title {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="left-panel">
+            <div class="cad-icon">📐</div>
+            <h1>CAD Design System</h1>
+            <p>전문적인 선체 3D 설계 및 생산도면 관리 시스템</p>
+            <div class="feature-list">
+                <div class="feature-item">3D 모델링 및 시각화</div>
+                <div class="feature-item">실시간 협업 기능</div>
+                <div class="feature-item">도면 버전 관리</div>
+                <div class="feature-item">프로젝트 관리 도구</div>
+            </div>
+        </div>
+
+        <div class="right-panel">
+            <!-- 로그인 폼 -->
+            <div id="loginForm" class="form-container">
+                <h2 class="form-title">로그인</h2>
+                <p class="form-subtitle">계정에 로그인하여 시작하세요</p>
+
+                <div id="loginAlert" class="alert"></div>
+
+                <form onsubmit="handleLogin(event)">
+                    <div class="form-group">
+                        <label for="loginEmail">이메일</label>
+                        <input type="email" id="loginEmail" placeholder="your.email@company.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="loginPassword">비밀번호</label>
+                        <input type="password" id="loginPassword" placeholder="비밀번호를 입력하세요" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="rememberMe">
+                        <label for="rememberMe">로그인 상태 유지</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">로그인</button>
+                </form>
+
+                <div class="form-footer">
+                    <p>계정이 없으신가요? <a onclick="showRegisterForm()">회원가입</a></p>
+                    <p><a onclick="showForgotPassword()">비밀번호를 잊으셨나요?</a></p>
+                </div>
+            </div>
+
+            <!-- 회원가입 폼 -->
+            <div id="registerForm" class="form-container hidden">
+                <h2 class="form-title">회원가입</h2>
+                <p class="form-subtitle">새로운 계정을 만들어보세요</p>
+
+                <div id="registerAlert" class="alert"></div>
+
+                <form onsubmit="handleRegister(event)">
+                    <div class="form-group">
+                        <label for="registerName">이름</label>
+                        <input type="text" id="registerName" placeholder="홍길동" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerEmail">이메일</label>
+                        <input type="email" id="registerEmail" placeholder="your.email@company.com" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerDepartment">부서</label>
+                        <select id="registerDepartment" required>
+                            <option value="">부서를 선택하세요</option>
+                            <option value="design">설계부</option>
+                            <option value="production">생산부</option>
+                            <option value="quality">품질관리부</option>
+                            <option value="engineering">기술부</option>
+                            <option value="management">관리부</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerPassword">비밀번호</label>
+                        <input type="password" id="registerPassword" placeholder="8자 이상 입력하세요" required oninput="checkPasswordStrength()">
+                        <div class="password-strength">
+                            <div id="passwordStrengthBar" class="password-strength-bar"></div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="registerConfirmPassword">비밀번호 확인</label>
+                        <input type="password" id="registerConfirmPassword" placeholder="비밀번호를 다시 입력하세요" required>
+                    </div>
+
+                    <div class="checkbox-group">
+                        <input type="checkbox" id="agreeTerms" required>
+                        <label for="agreeTerms">이용약관 및 개인정보처리방침에 동의합니다</label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">회원가입</button>
+                    <button type="button" class="btn btn-secondary" onclick="showLoginForm()">로그인으로 돌아가기</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 사용자 데이터 저장 (실제로는 서버/데이터베이스 사용)
+        const users = {};
+
+        // 로그인 폼 표시
+        function showLoginForm() {
+            document.getElementById('loginForm').classList.remove('hidden');
+            document.getElementById('registerForm').classList.add('hidden');
+            clearAlerts();
+        }
+
+        // 회원가입 폼 표시
+        function showRegisterForm() {
+            document.getElementById('loginForm').classList.add('hidden');
+            document.getElementById('registerForm').classList.remove('hidden');
+            clearAlerts();
+        }
+
+        // 비밀번호 찾기 (알림만 표시)
+        function showForgotPassword() {
+            showAlert('loginAlert', '비밀번호 재설정 링크가 이메일로 전송되었습니다.', 'success');
+        }
+
+        // 알림 표시
+        function showAlert(elementId, message, type) {
+            const alert = document.getElementById(elementId);
+            alert.textContent = message;
+            alert.className = `alert alert-${type} show`;
+            setTimeout(() => {
+                alert.classList.remove('show');
+            }, 5000);
+        }
+
+        // 알림 초기화
+        function clearAlerts() {
+            document.querySelectorAll('.alert').forEach(alert => {
+                alert.classList.remove('show');
+            });
+        }
+
+        // 비밀번호 강도 체크
+        function checkPasswordStrength() {
+            const password = document.getElementById('registerPassword').value;
+            const strengthBar = document.getElementById('passwordStrengthBar');
+            
+            let strength = 0;
+            if (password.length >= 8) strength++;
+            if (password.match(/[a-z]/) && password.match(/[A-Z]/)) strength++;
+            if (password.match(/[0-9]/)) strength++;
+            if (password.match(/[^a-zA-Z0-9]/)) strength++;
+
+            strengthBar.className = 'password-strength-bar';
+            if (strength <= 1) {
+                strengthBar.classList.add('strength-weak');
+            } else if (strength <= 3) {
+                strengthBar.classList.add('strength-medium');
+            } else {
+                strengthBar.classList.add('strength-strong');
+            }
+        }
+
+        // 로그인 처리
+        function handleLogin(event) {
+            event.preventDefault();
+            
+            const email = document.getElementById('loginEmail').value;
+            const password = document.getElementById('loginPassword').value;
+
+            // 저장된 사용자 확인
+            const user = users[email];
+            
+            if (!user) {
+                showAlert('loginAlert', '등록되지 않은 이메일입니다.', 'error');
+                return;
+            }
+
+            if (user.password !== password) {
+                showAlert('loginAlert', '비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+
+            // 로그인 성공
+            showAlert('loginAlert', '로그인 성공! 시스템으로 이동합니다...', 'success');
+            
+            // 실제로는 페이지 리다이렉션
+            setTimeout(() => {
+                console.log('로그인 성공:', user);
+                // window.location.href = 'dashboard.html';
+            }, 1500);
+        }
+
+        // 회원가입 처리
+        function handleRegister(event) {
+            event.preventDefault();
+
+            const name = document.getElementById('registerName').value;
+            const email = document.getElementById('registerEmail').value;
+            const department = document.getElementById('registerDepartment').value;
+            const password = document.getElementById('registerPassword').value;
+            const confirmPassword = document.getElementById('registerConfirmPassword').value;
+
+            // 유효성 검사
+            if (users[email]) {
+                showAlert('registerAlert', '이미 등록된 이메일입니다.', 'error');
+                return;
+            }
+
+            if (password.length < 8) {
+                showAlert('registerAlert', '비밀번호는 8자 이상이어야 합니다.', 'error');
+                return;
+            }
+
+            if (password !== confirmPassword) {
+                showAlert('registerAlert', '비밀번호가 일치하지 않습니다.', 'error');
+                return;
+            }
+
+            // 사용자 등록
+            users[email] = {
+                name: name,
+                email: email,
+                department: department,
+                password: password,
+                createdAt: new Date().toISOString()
+            };
+
+            showAlert('registerAlert', '회원가입이 완료되었습니다! 로그인해주세요.', 'success');
+
+            // 2초 후 로그인 폼으로 이동
+            setTimeout(() => {
+                showLoginForm();
+                // 이메일 자동 입력
+                document.getElementById('loginEmail').value = email;
+            }, 2000);
+        }
+
+        // 테스트용 기본 사용자 추가
+        users['test@company.com'] = {
+            name: '테스트 사용자',
+            email: 'test@company.com',
+            department: 'design',
+            password: 'test1234',
+            createdAt: new Date().toISOString()
+        };
+    </script>
+</body>
+</html>

@@ -95,6 +95,12 @@ function initResize(e) {
 
   currentResizer.classList.add("active");
 
+    // iframe의 pointer-events 비활성화 (핵심!)
+  const iframes = document.querySelectorAll('iframe');
+  iframes.forEach(iframe => {
+    iframe.style.pointerEvents = 'none';
+  });
+
   const resizeType = currentResizer.dataset.resize;
 
   if (resizeType === "left") {
@@ -234,6 +240,13 @@ function stopResize() {
     document.getElementById("rightPanel").classList.remove("active");
     document.getElementById("consoleResizer").classList.remove("active");
     currentResizer = null;
+
+      // iframe의 pointer-events 복구 (핵심!)
+  const iframes = document.querySelectorAll('iframe');
+  iframes.forEach(iframe => {
+    iframe.style.pointerEvents = 'auto';
+  });
+  
     document.removeEventListener("mousemove", resize);
     document.removeEventListener("mouseup", stopResize);
 
@@ -358,14 +371,8 @@ function logToConsole(message, type = "info") {
         { filename: "E24P_BLOCK.glb", imgSrc: "./images/E24P_BLOCK.PNG" },
         { filename: "E31P_BLOCK.glb", imgSrc: "./images/E31P_BLOCK.PNG" },
         { filename: "E32C_BLOCK.glb", imgSrc: "./images/E32C_BLOCK.PNG" },
-        {
-          filename: "ME31P_CARL_001.glb",
-          imgSrc: "./images/ME31P_CARL_001.PNG",
-        },
-        {
-          filename: "ME31P_DMG_001_OPEM.glb",
-          imgSrc: "./images/ME31P_DMG_001_OPEM.PNG",
-        },
+        { filename: "ME31P_CARL_001.glb", imgSrc: "./images/ME31P_CARL_001.PNG", },
+        { filename: "ME31P_DMG_001_OPEM.glb", imgSrc: "./images/ME31P_DMG_001_OPEM.PNG", },
         { filename: "ME31P_GRT_001.glb", imgSrc: "./images/ME31P_GRT_001.PNG" },
         { filename: "ME31P_HRL_001.glb", imgSrc: "./images/ME31P_HRL_001.PNG" },
         { filename: "ME31P_HRL_002.glb", imgSrc: "./images/ME31P_HRL_002.PNG" },
@@ -373,10 +380,7 @@ function logToConsole(message, type = "info") {
         { filename: "ME31P_HRL_004.glb", imgSrc: "./images/ME31P_HRL_004.PNG" },
         { filename: "ME31P_HRL_005.glb", imgSrc: "./images/ME31P_HRL_005.PNG" },
         { filename: "ME31P_HRL_006.glb", imgSrc: "./images/ME31P_HRL_006.PNG" },
-        {
-          filename: "ME31P_MST_001_R1.glb",
-          imgSrc: "./images/ME31P_MST_001_R1.PNG",
-        },
+        { filename: "ME31P_MST_001_R1.glb", imgSrc: "./images/ME31P_MST_001_R1.PNG", },
         { filename: "ME31PT_TH138.glb", imgSrc: "./images/ME31PT_TH138.PNG" },
         { filename: "ME31PT_TR169.glb", imgSrc: "./images/ME31PT_TR169.PNG" },
         { filename: "ME31PT_VA001.glb", imgSrc: "./images/ME31PT_VA001.PNG" },

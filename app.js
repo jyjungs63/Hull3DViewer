@@ -19,7 +19,8 @@ app.use(cookieParser());
 
 // CORS: 프런트엔드 주소를 허용
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: true,
+  //origin: process.env.FRONTEND_URL || 'http://127.0.0.1:5501',
   credentials: true
 }));
 

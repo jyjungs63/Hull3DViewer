@@ -3,36 +3,330 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>선체 3D 생산도면</title>
-    <!-- jsTree CSS -->
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
 
-    <!-- jQuery (필수) -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
-
-    <!-- jsTree JS -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
-    <script src="3dData.js"></script>
-    <!-- Three.js + GLTFLoader + OrbitControls -->
-    <script type="importmap">
-      {
-        "imports": {
-          "three": "https://cdn.jsdelivr.net/npm/three@0.169.0/build/three.module.min.js",
-          "three/examples/jsm/loaders/GLTFLoader.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/GLTFLoader.js",
-          "three/examples/jsm/controls/OrbitControls.js": "https://cdn.jsdelivr.net/npm/three@0.169/examples/jsm/controls/OrbitControls.js",
-          "three/examples/jsm/loaders/DRACOLoader.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/loaders/DRACOLoader.js",
-          "three/examples/jsm/environments/RoomEnvironment.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/environments/RoomEnvironment.js",
-          "three/examples/jsm/postprocessing/EffectComposer.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/EffectComposer.js",
-          "three/examples/jsm/postprocessing/RenderPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/RenderPass.js",
-          "three/examples/jsm/postprocessing/OutputPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutputPass.js",
-          "three/examples/jsm/libs/lil-gui.module.min.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/lil-gui.module.min.js",
-          "three/examples/jsm/postprocessing/OutlinePass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/OutlinePass.js",
-          "three/examples/jsm/postprocessing/UnrealBloomPass.js": "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/postprocessing/UnrealBloomPass.js"
-        }
-      }
-    </script>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
 
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        height: 100vh;
+        overflow: hidden;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        height: 100vh;
+      }
+
+      .menu-bar {
+        background: #2c3e50;
+        color: white;
+        padding: 12px 20px;
+        font-size: 18px;
+        font-weight: 600;
+        border-bottom: 2px solid #34495e;
+      }
+
+      .main-content {
+        display: flex;
+        flex: 1;
+        overflow: hidden;
+      }
+
+      .left-panel {
+        min-width: 100px;
+        width: 200px;
+        background: #ecf0f1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #2c3e50;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .center-panel {
+        flex: 1;
+        display: flex;
+        flex-direction: column;
+        min-width: 200px;
+      }
+
+      .top-row {
+        display: flex;
+        flex: 1;
+        min-height: 100px;
+        position: relative;
+      }
+
+      .bottom-row {
+        display: flex;
+        flex: 1;
+        min-height: 100px;
+        position: relative;
+      }
+
+      .view-panel {
+        flex: 1;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #2c3e50;
+        font-weight: 500;
+        background: #fff;
+        position: relative;
+        min-width: 150px;
+      }
+
+      .right-panel {
+        min-width: 150px;
+        width: 700px;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+
+      .right-panel::before {
+        content: "";
+        position: absolute;
+        left: -2px;
+        top: 0;
+        bottom: 0;
+        width: 4px;
+        background: #bdc3c7;
+        cursor: col-resize;
+        z-index: 10;
+      }
+
+      .right-panel:hover::before,
+      .right-panel.resizing::before {
+        background: #3498db;
+      }
+
+      .right-panel.active::before {
+        background: #2980b9;
+      }
+
+      .right-top {
+        flex: 2;
+        background: #fff;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #2c3e50;
+        font-weight: 500;
+        position: relative;
+      }
+
+      .right-bottom {
+        flex: 1;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 20px;
+        color: #2c3e50;
+        font-weight: 500;
+        position: relative;
+        min-height: 100px;
+      }
+
+      .console {
+        background: #1e1e1e;
+        color: #d4d4d4;
+        padding: 15px;
+        font-family: "Courier New", monospace;
+        font-size: 14px;
+        height: 100px;
+        overflow-y: auto;
+        border-top: 2px solid #333;
+        position: relative;
+        min-height: 30px;
+      }
+
+      .console-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+      }
+
+      .console-content {
+        overflow-y: auto;
+        height: calc(100% - 30px);
+      }
+
+      .toggle-btn {
+        background: #3498db;
+        color: white;
+        border: none;
+        padding: 4px 10px;
+        cursor: pointer;
+        border-radius: 3px;
+        font-size: 12px;
+        transition: background 0.2s;
+      }
+
+      .toggle-btn:hover {
+        background: #2980b9;
+      }
+
+      .console.collapsed {
+        height: 35px;
+        overflow: hidden;
+      }
+
+      .console.collapsed .console-content {
+        display: none;
+      }
+
+      .panel-header {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+        z-index: 100;
+      }
+
+      .console-resizer {
+        position: absolute;
+        top: -2px;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: #bdc3c7;
+        cursor: row-resize;
+        z-index: 10;
+      }
+
+      .console-resizer:hover {
+        background: #3498db;
+      }
+
+      .console-resizer.active {
+        background: #2980b9;
+      }
+
+      .left-panel.collapsed {
+        width: 40px;
+        min-width: 40px;
+      }
+
+      .left-panel.collapsed .panel-content {
+        display: none;
+      }
+
+      .left-panel .toggle-btn {
+        position: absolute;
+        top: 5px;
+        right: 5px;
+      }
+
+      .left-panel.collapsed .toggle-btn {
+        right: 50%;
+        transform: translateX(50%);
+      }
+
+      .panel-content {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+      }
+
+      .resizer {
+        background: #bdc3c7;
+        position: relative;
+        z-index: 10;
+      }
+
+      .resizer:hover {
+        background: #3498db;
+      }
+
+      .resizer.active {
+        background: #2980b9;
+      }
+
+      .resizer-h {
+        width: 4px;
+        cursor: col-resize;
+      }
+
+      .resizer-v {
+        height: 4px;
+        cursor: row-resize;
+      }
+
+      .resizer-h-thin {
+        width: 4px;
+        cursor: col-resize;
+        position: absolute;
+        right: -2px;
+        top: 0;
+        bottom: 0;
+      }
+
+      .resizer-v-thin {
+        height: 4px;
+        cursor: row-resize;
+        position: absolute;
+        bottom: -2px;
+        left: 0;
+        right: 0;
+        z-index: 5;
+      }
+
+      .resizer-v-between {
+        width: 4px;
+        cursor: col-resize;
+        background: #bdc3c7;
+        z-index: 5;
+        flex-shrink: 0;
+      }
+
+      .resizer-v-between:hover {
+        background: #3498db;
+      }
+
+      .resizer-v-between.active {
+        background: #2980b9;
+      }
+      .menubar {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 12px 20px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        border-bottom: 1px solid #e0e0e0;
+        min-height: 50px;
+        position: relative;
+        z-index: 1000;
+      }
+      .menu-controls {
+        display: flex;
+        gap: 15px;
+      }
+
+      .menu-btn {
+        background: rgba(255, 255, 255, 0.2);
+        border: none;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        font-size: 0.9rem;
+      }      
     </style>
   </head>
   <body>
@@ -52,46 +346,6 @@
         <div class="left-panel" id="leftPanel">
           <button class="toggle-btn" onclick="toggleLeftPanel()">◀</button>
           <div class="panel-content" style="display: flex; flex-direction: column; height: 100%; align-items: center;">
-            <!-- 검색 폼 (width 80%) -->
-            <div style="flex: none; width: 90%; padding: 10px 12px; border-bottom: 1px solid #ddd">
-              <form id="searchForm" onsubmit="return false;" style="width: 100%;">
-                <!-- 승선 -->
-                <div style="margin-bottom: 10px">
-                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">호선</label>
-                  <div style="display: flex; gap: 5px">
-                    <input type="text" id="승선" placeholder="201" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
-                    <button type="button" onclick="search승선()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">☰</button>
-                  </div>
-                </div>
-
-                <!-- 설계부서 -->
-                <div style="margin-bottom: 10px">
-                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">블럭</label>
-                  <div style="display: flex; gap: 5px">
-                    <input type="text" id="설계부서" placeholder="F212C" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
-                    <button type="button" onclick="select설계부서()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">🔍</button>
-                  </div>
-                </div>
-
-                <!-- 도면번호 -->
-                <div style="margin-bottom: 10px">
-                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면번호</label>
-                  <div style="display: flex; gap: 5px">
-                    <input type="text" id="도면번호" placeholder="" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
-                    <button type="button" onclick="search도면번호()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">🔍</button>
-                  </div>
-                </div>
-
-                <!-- 도면명 -->
-                <div style="margin-bottom: 10px">
-                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면명</label>
-                  <input type="text" id="도면명" placeholder="" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
-                </div>
-              </form>
-            </div>
-
-            <!-- jsTree (남은 공간 모두 차지) -->
-            <div id="jstree" style="flex: 1; overflow: auto; padding: 0px" ></div>
           </div>
           <div class="resizer resizer-h-thin" data-resize="left"></div>
         </div>
@@ -101,7 +355,6 @@
             <div id="view1" class="view-panel"></div>
             <div class="resizer resizer-v-between" data-resize="view1-h"></div>
             <div id="view2" class="view-panel">
-              <!-- <div class="resizer resizer-v-thin" data-resize="view1-v"></div> -->
             </div>
           </div>
           <div class="resizer resizer-v" data-resize="topRow"></div>
@@ -117,7 +370,6 @@
 
         <div class="right-panel" id="rightPanel">
           <div class="right-top" id="rightTop"> 
-              <iframe src="index_view.html" style="width: 100%; height: 100%; border: none;"  > </iframe>
               <div class="resizer resizer-v-thin" data-resize="rightTop"></div>
           </div>
           
@@ -136,22 +388,8 @@
         </div>
       </div>
     </div>
-    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+
     <script type="module">
-      import * as THREE from "three";
-      import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
-      import { OrbitControls } from "three/examples/jsm/controls/OrbitControls.js";
-      import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
-
-
-      const models = {
-        view1: "mipoTest/F201.glb",
-        view2: "mipoTest/E21P_BLOCK.glb",
-        view3: "mipoTest/E22P_BLOCK.glb",
-      };
-
-      // 3D 뷰 인스턴스를 저장할 객체
-      const threeViews = {};
 
       let isResizing = false;
       let currentResizer = null;
@@ -388,134 +626,12 @@
         }
       }
 
-      // 모든 3D 뷰 업데이트
-      function updateAllViews() {
-        Object.keys(threeViews).forEach((viewId) => {
-          updateView(viewId);
-        });
-      }
-
-      // 특정 3D 뷰 업데이트
-      function updateView(viewId) {
-        const view = threeViews[viewId];
-        if (!view) return;
-
-        const container = document.getElementById(viewId);
-        const width = container.clientWidth;
-        const height = container.clientHeight;
-        if (viewId === "view1") {
-          console.log(`Updating view ${viewId}: ${width}x${height}`);
-        }
-        view.camera.aspect = width / height;
-        view.camera.updateProjectionMatrix();
-        view.renderer.setSize(width, height);
-      }
-
-      function initThreeView(viewId, modelPath) {
-        const container = document.getElementById(viewId);
-        container.innerHTML = "";
-
-        const scene = new THREE.Scene();
-        scene.background = new THREE.Color(0xf0f0f0);
-
-        const camera = new THREE.PerspectiveCamera( 45, container.clientWidth / container.clientHeight, 0.1, 1000 );
-        camera.position.set(2, 2, 2);
-
-        const renderer = new THREE.WebGLRenderer({ antialias: true });
-        renderer.setSize(container.clientWidth, container.clientHeight);
-        container.appendChild(renderer.domElement);
-
-        const controls = new OrbitControls(camera, renderer.domElement);
-        controls.enableDamping = true;
-
-        const light = new THREE.HemisphereLight(0xffffff, 0x444444);
-        light.position.set(1, 1, 1);
-        scene.add(light);
-
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
-        directionalLight.position.set(2, 2, 2);
-        scene.add(directionalLight);
-
-        // 뷰 정보 저장
-        threeViews[viewId] = { scene, camera, renderer, controls, };
-
-        const loader = new GLTFLoader();
-        const dracoLoader = new DRACOLoader();
-        dracoLoader.setDecoderPath(
-          "https://cdn.jsdelivr.net/npm/three@0.169.0/examples/jsm/libs/draco/"
-        );
-        loader.setDRACOLoader(dracoLoader);
-
-        loader.load(
-          modelPath,
-          function (gltf) {
-            const model = gltf.scene;
-            const box = new THREE.Box3().setFromObject(model);
-            const center = box.getCenter(new THREE.Vector3());
-
-            scene.add(model);
-
-            const size = box.getSize(new THREE.Vector3());
-            const maxDim = Math.max(size.x, size.y, size.z);
-            const fitDistance = maxDim * 1.5;
-            camera.position.set(
-              center.x + fitDistance,
-              center.y + fitDistance,
-              center.z + fitDistance
-            );
-            camera.lookAt(center);
-            controls.target.copy(center);
-
-            animate();
-          },
-          undefined,
-          function (error) {
-            console.error(`Error loading ${modelPath}:`, error);
-          }
-        );
-
-        function animate() {
-          requestAnimationFrame(animate);
-          controls.update();
-          renderer.render(scene, camera);
-        }
-      }
 
       // 윈도우 리사이즈 이벤트
       window.addEventListener("resize", () => {
         updateAllViews();
       });
 
-      // 3D 뷰 초기화
-      initThreeView("view1", models.view1);
-      logToConsole("view1 초기화", "info");
-
-      initThreeView("images", models.view2);
-      logToConsole("view2 초기화", "info");
-
-      initThreeView("view3", models.view3);
-      logToConsole("view3 초기화", "info");
-
-      displayGLBTable("view2", 4);
-      logToConsole("Images 초기화 완료", "success");
-      // jsTree 초기화
-      $(function () {
-        $("#jstree")
-          .jstree({
-            core: {
-              data: treeData,
-            },
-            plugins: ["state"], // 선택사항: 상태 저장
-          })
-          .on("ready.jstree", function () {
-            $(this).jstree("open_all");
-          })
-          .on("select_node.jstree", function (e, data) {
-            const node = data.node;
-            logToConsole(`노드 선택: ${node.text}`, "warning");
-            // 선택된 노드에 따라 3D 뷰 업데이트 로직 추가 가능
-          });
-      });
     </script>
   </body>
 </html>

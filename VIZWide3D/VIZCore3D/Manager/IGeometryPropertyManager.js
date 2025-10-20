@@ -1,0 +1,1 @@
+class GeometryProperty{constructor(a,b,c){let d=this;this['Main']=a,this['Object3D']=c,this['GetBoundBoxByNode']=function(e){return d['Object3D']['GetBoundBoxByNode'](e);},this['GetBoundBoxByNodeID']=function(e){return d['Object3D']['GetBoundBoxByNodeID'](e);},this['GetBoundBoxByBody']=function(e){return d['Main']['Data']['GetBBox'](e);};}}export default GeometryProperty;

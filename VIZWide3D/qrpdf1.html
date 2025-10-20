@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>pdf-lib + QRCode 예제</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #qrcode {
+      margin: 20px auto;
+    }
+    input {
+      width: 250px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>📄 pdf-lib으로 QR 코드 PDF 만들기</h2>
+  <input type="text" id="textInput" placeholder="QR 코드에 넣을 텍스트 입력">
+  <button onclick="generateQRCode()">QR 코드 생성</button>
+  <div id="qrcode"></div>
+  <button onclick="generatePDF()">📥 PDF 다운로드</button>
+
+  <script>
+    let qrCodeInstance = null;
+
+    const users = [
+    {
+      "appConfig": {
+        "version": "1.0.3",
+        "lastUpdated": "2025-09-23T14:25:00+09:00",
+        "features": {
+          "darkMode": true,
+          "notifications": {
+            "email": true,
+            "sms": false,
+            "push": true
+          },
+          "language": "ko-KR"
+        }
+      },
+    }
+    ];
+
+    function generateQRCode() {
+      const text = document.getElementById("textInput").value || "https://example.com";
+
+      // 기존 QR 초기화
+      document.getElementById("qrcode").innerHTML = "";
+
+      // QR 생성
+      qrCodeInstance = new QRCode(document.getElementById("qrcode"), {
+        text: JSON.stringify(users),
+        width: 150,
+        height: 150,
+      });
+    }
+
+    async function generatePDF() {
+      if (!qrCodeInstance) {
+        alert("먼저 QR 코드를 생성하세요!");
+        return;
+      }
+
+      // QR Canvas에서 DataURL 추출
+      const qrCanvas = document.querySelector("#qrcode canvas");
+      const qrDataUrl = qrCanvas.toDataURL("image/png");
+
+      // PDF 생성
+      const { PDFDocument, rgb } = PDFLib;
+      const pdfDoc = await PDFDocument.create();
+      const page = pdfDoc.addPage([400, 400]);
+
+      // 제목 텍스트
+      const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+      page.drawText("QR Code PDF Example", {
+        x: 50,
+        y: 350,
+        size: 14,
+        font,
+        color: rgb(0, 0, 0),
+      });
+
+      // QR 이미지 삽입
+      const qrImage = await pdfDoc.embedPng(qrDataUrl);
+      const qrDims = qrImage.scale(0.5); // 크기 조절
+      page.drawImage(qrImage, {
+        x: 50,
+        y: 150,
+        width: qrDims.width,
+        height: qrDims.height,
+      });
+
+      // PDF 저장 및 다운로드
+      const pdfBytes = await pdfDoc.save();
+      const blob = new Blob([pdfBytes], { type: "application/pdf" });
+      const link = document.createElement("a");
+      link.href = URL.createObjectURL(blob);
+      link.download = "qrcode.pdf";
+      link.click();
+    }
+  </script>
+</body>
+</html>

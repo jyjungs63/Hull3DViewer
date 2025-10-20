@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>QR 코드 스캔 예제</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    #reader {
+      width: 300px;
+      margin: auto;
+      padding-top: 50px;
+    }
+    #result {
+      margin-top: 20px;
+      text-align: center;
+      font-size: 18px;
+      color: green;
+    }
+  </style>
+</head>
+<body>
+  <div id="reader"></div>
+  <div id="result">QR 코드 결과가 여기에 표시됩니다.</div>
+
+  <script>
+    function onScanSuccess(decodedText, decodedResult) {
+      document.getElementById('result').innerText = `✅ 인식된 QR 코드: ${decodedText}`;
+    }
+
+    function onScanFailure(error) {
+      // 실패 시 로그만 출력 (너무 자주 발생하므로 화면에는 표시하지 않음)
+      console.warn(`QR 인식 실패: ${error}`);
+    }
+
+    const html5QrCode = new Html5Qrcode("reader");
+    const config = { fps: 10, qrbox: 250 };
+
+    Html5Qrcode.getCameras().then(cameras => {
+      if (cameras && cameras.length) {
+        html5QrCode.start(
+          cameras[1].id,
+          config,
+          onScanSuccess,
+          onScanFailure
+        );
+      } else {
+        alert("📷 카메라를 찾을 수 없습니다.");
+      }
+    }).catch(err => {
+      console.error("카메라 접근 오류:", err);
+    });
+  </script>
+</body>
+</html>

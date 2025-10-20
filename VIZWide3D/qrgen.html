@@ -1,0 +1,425 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>QR 코드 생성기</title>
+
+  <!-- qrcodejs (경량) -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f4f6fb;
+      --panel:#fff;
+      --accent:#1f7aed;
+      --muted:#6b7280;
+      --radius:12px;
+    }
+    *{box-sizing:border-box}
+    body{
+      margin:0;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif;
+      background:var(--bg);
+      color:#0b1220;
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding:16px;
+    }
+
+    .wrap{
+      max-width:880px;
+      margin:0 auto;
+    }
+
+    header{display:flex;gap:12px;align-items:center; margin-bottom:12px;}
+    header h1{font-size:1.05rem;margin:0}
+    header p{margin:0;color:var(--muted);font-size:0.9rem}
+
+    .panel{
+      background:var(--panel);
+      border-radius:var(--radius);
+      padding:14px;
+      box-shadow:0 8px 24px rgba(8,20,40,0.06);
+    }
+
+    .grid{
+      display:grid;
+      grid-template-columns:1fr 320px;
+      gap:14px;
+    }
+    @media (max-width:900px){
+      .grid{grid-template-columns:1fr;}
+    }
+
+    .form-row{display:flex;gap:8px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+    .form-row label{min-width:80px;color:var(--muted);font-size:0.9rem}
+    .form-row input[type="text"], .form-row input[type="number"], .form-row select {
+      flex:1;
+      padding:10px 12px;
+      border-radius:8px;
+      border:1px solid #e6e9ef;
+      font-size:15px;
+      background:#fff;
+    }
+    textarea{width:100%;min-height:88px;padding:12px;border-radius:8px;border:1px solid #e6e9ef;font-size:15px;resize:vertical}
+
+    .controls{display:flex;gap:8px;flex-wrap:wrap}
+    .btn{
+      background:var(--accent);
+      color:#fff;
+      border:0;
+      padding:10px 14px;
+      border-radius:10px;
+      font-weight:600;
+      cursor:pointer;
+    }
+    .btn.ghost{
+      background:#fff;
+      color:#111;
+      border:1px solid #e5e7eb;
+    }
+
+    .preview-box{
+      display:flex;
+      flex-direction:column;
+      align-items:center;
+      gap:8px;
+    }
+    .qrcode-wrap{
+      width:100%;
+      max-width:300px;
+      padding:16px;
+      border-radius:12px;
+      background:linear-gradient(180deg, #fff, #fbfdff);
+      display:flex;
+      justify-content:center;
+      align-items:center;
+      border:1px solid #eef2ff;
+    }
+
+    .meta{font-size:0.85rem;color:var(--muted);text-align:center}
+    .option-row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    .color-input{width:46px;height:40px;padding:4px;border-radius:8px;border:1px solid #e6e9ef;background:#fff}
+
+    .small{font-size:0.85rem;color:var(--muted)}
+    .footer{margin-top:12px;text-align:center;color:var(--muted);font-size:0.85rem}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>QR 코드 생성기</h1>
+        <p>텍스트, URL, 연락처 등을 QR 코드로 만들어 PNG로 다운로드하세요.</p>
+      </div>
+    </header>
+
+    <div class="panel grid">
+      <!-- form -->
+      <div>
+        <div style="margin-bottom:12px">
+          <label class="small">입력할 내용</label>
+          <textarea id="textInput" placeholder="URL, 텍스트, 연락처 등 입력"></textarea>
+        </div>
+
+        <div class="form-row">
+          <label>크기</label>
+          <input id="sizeInput" type="number" min="64" max="1024" value="300" />
+        </div>
+
+        <div class="form-row">
+          <label>오류정정</label>
+          <select id="ecLevel">
+            <option value="L">L (낮음, 7%)</option>
+            <option value="M" selected>M (중간, 15%)</option>
+            <option value="Q">Q (높음, 25%)</option>
+            <option value="H">H (매우 높음, 30%)</option>
+          </select>
+        </div>
+
+        <div class="form-row">
+          <label>전경색</label>
+          <input id="colorDark" class="color-input" type="color" value="#000000" title="전경색">
+          <label style="min-width:70px">배경색</label>
+          <input id="colorLight" class="color-input" type="color" value="#ffffff" title="배경색">
+        </div>
+
+        <div class="form-row">
+          <label>마진</label>
+          <input id="marginInput" type="number" min="0" max="40" value="4" />
+          <label style="min-width:70px">레이블</label>
+          <input id="labelInput" type="text" placeholder="(옵션) QR 레이블" />
+        </div>
+
+        <div style="margin-top:8px" class="controls">
+          <button id="generateBtn" class="btn">생성</button>
+          <button id="downloadBtn" class="btn ghost">PNG 다운로드</button>
+          <button id="copyBtn" class="btn ghost">텍스트 복사</button>
+          <button id="clearBtn" class="btn ghost">초기화</button>
+        </div>
+
+        <div class="footer">※ QR 생성은 클라이언트(브라우저)에서 처리됩니다.</div>
+      </div>
+
+      <!-- preview -->
+      <div class="preview-box">
+        <div class="qrcode-wrap panel" id="qrcodePanel">
+          <div id="qrcode"></div>
+        </div>
+        <div class="meta">
+          <div>실시간 미리보기</div>
+          <div id="qrInfo" class="small"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // 전역 변수
+    let qrcode = null;
+    const qrcodeContainer = document.getElementById('qrcode');
+    const textInput = document.getElementById('textInput');
+    const sizeInput = document.getElementById('sizeInput');
+    const ecLevel = document.getElementById('ecLevel');
+    const colorDark = document.getElementById('colorDark');
+    const colorLight = document.getElementById('colorLight');
+    const marginInput = document.getElementById('marginInput');
+    const labelInput = document.getElementById('labelInput');
+    const generateBtn = document.getElementById('generateBtn');
+    const downloadBtn = document.getElementById('downloadBtn');
+    const copyBtn = document.getElementById('copyBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const qrInfo = document.getElementById('qrInfo');
+
+    // qrcodejs의 CorrectLevel 매핑
+    const CorrectLevel = {
+      L: QRCode.CorrectLevel.L,
+      M: QRCode.CorrectLevel.M,
+      Q: QRCode.CorrectLevel.Q,
+      H: QRCode.CorrectLevel.H
+    };
+
+    // QR 생성 함수
+    function generate() {
+      const text = (textInput.value || '').trim();
+      if (!text) {
+        alert('먼저 텍스트를 입력하세요.');
+        textInput.focus();
+        return;
+      }
+
+      const size = Math.max(64, Math.min(1024, parseInt(sizeInput.value || 300)));
+      const ec = ecLevel.value || 'M';
+      const dark = colorDark.value || '#000';
+      const light = colorLight.value || '#fff';
+      const margin = Math.max(0, Math.min(40, parseInt(marginInput.value || 4)));
+      const label = (labelInput.value || '').trim();
+
+      // 기존 QR 제거
+      qrcodeContainer.innerHTML = '';
+
+      // qrcode.js 옵션으로 생성 (QR은 table 형태로 생성됨)
+      qrcode = new QRCode(qrcodeContainer, {
+        text: text,
+        width: size,
+        height: size,
+        colorDark: dark,
+        colorLight: light,
+        correctLevel: CorrectLevel[ec],
+      });
+
+      // qrcode.js는 margin 옵션이 직접 없음 -> 캔버스를 통해 margin 적용하려면 canvas로 변환 후 처리
+      // 정보표시
+      qrInfo.innerText = `크기: ${size}px · 오류정정: ${ec} · 마진: ${margin}px ${label ? '· 레이블: ' + label : ''}`;
+
+      // label 처리: 레이블이 있으면 DOM 아래에 텍스트 추가
+      removeLabel(); // 중복 방지
+      if (label) {
+        const lbl = document.createElement('div');
+        lbl.id = 'qrLabel';
+        lbl.style.marginTop = '8px';
+        lbl.style.fontSize = '0.95rem';
+        lbl.style.color = '#222';
+        lbl.style.textAlign = 'center';
+        lbl.textContent = label;
+        qrcodeContainer.parentElement.appendChild(lbl);
+      }
+
+      // qrcode.js는 table/SVG를 만든다. PNG 다운로드을 위해 canvas로 변환하는 함수 준비
+    }
+
+    // label 제거
+    function removeLabel(){
+      const old = document.getElementById('qrLabel');
+      if (old) old.remove();
+    }
+
+    // HTML 요소(Table or SVG) -> canvas 변환 (supports table-based qrcode.js output or svg)
+    function domToCanvas(callback) {
+      // 방법: SVG -> 이미지 -> canvas, or table -> canvas via foreignObject fallback
+      const el = qrcodeContainer.firstElementChild;
+      if (!el) {
+        alert('생성된 QR 코드가 없습니다.');
+        return;
+      }
+
+      // SVG 처리
+      if (el.tagName.toLowerCase() === 'svg') {
+        const svgData = new XMLSerializer().serializeToString(el);
+        const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+        const url = URL.createObjectURL(svgBlob);
+        const img = new Image();
+        img.onload = function() {
+          const canvas = document.createElement('canvas');
+          canvas.width = img.width;
+          canvas.height = img.height;
+          const ctx = canvas.getContext('2d');
+          // 배경 채우기 (colorLight)
+          ctx.fillStyle = colorLight.value || '#fff';
+          ctx.fillRect(0,0,canvas.width,canvas.height);
+          ctx.drawImage(img, 0, 0);
+          URL.revokeObjectURL(url);
+          callback(canvas);
+        };
+        img.onerror = function(e){
+          URL.revokeObjectURL(url);
+          alert('SVG -> 이미지 변환 실패');
+        };
+        img.src = url;
+        return;
+      }
+
+      // table 처리 (qrcode.js 기본은 table)
+      if (el.tagName.toLowerCase() === 'div' || el.tagName.toLowerCase() === 'table' || el.tagName.toLowerCase() === 'img') {
+        // qrcode.js sometimes renders as <img> when using (text) small data; try using toDataURL if image exists
+        const imgTag = el.querySelector('img');
+        if (imgTag && imgTag.src) {
+          const img = new Image();
+          img.onload = function(){
+            const canvas = document.createElement('canvas');
+            canvas.width = img.width;
+            canvas.height = img.height;
+            const ctx = canvas.getContext('2d');
+            ctx.fillStyle = colorLight.value || '#fff';
+            ctx.fillRect(0,0,canvas.width,canvas.height);
+            ctx.drawImage(img,0,0);
+            callback(canvas);
+          };
+          img.onerror = () => alert('이미지 로드 실패');
+          img.src = imgTag.src;
+          return;
+        }
+
+        // Fallback: render table squares onto canvas
+        // find all td (cells)
+        const cells = el.querySelectorAll('td');
+        if (!cells || cells.length === 0) {
+          alert('QR DOM 변환 불가 (지원되지 않는 형식).');
+          return;
+        }
+        // Determine matrix size (count of squares per row)
+        // We assume table structure with N rows each having N td
+        const rows = el.querySelectorAll('tr');
+        const n = rows.length;
+        const size = parseInt(sizeInput.value || 300);
+        const margin = Math.max(0, Math.min(40, parseInt(marginInput.value || 4)));
+        const canvas = document.createElement('canvas');
+        canvas.width = size + margin*2;
+        canvas.height = size + margin*2;
+        const ctx = canvas.getContext('2d');
+        // fill background
+        ctx.fillStyle = colorLight.value || '#fff';
+        ctx.fillRect(0,0,canvas.width,canvas.height);
+        const cellSize = size / n;
+        let y = margin;
+        rows.forEach((tr, rowIdx) => {
+          const tds = tr.querySelectorAll('td');
+          let x = margin;
+          tds.forEach((td, colIdx) => {
+            const bg = window.getComputedStyle(td).backgroundColor;
+            // qrcode.js sets background-color or uses black/white by default
+            // detect 'rgb(0, 0, 0)' i.e. dark -> draw dark color
+            const isDark = bg && (bg.includes('rgb(0, 0, 0)') || bg.includes('#000') || bg.includes('rgba(0, 0, 0'));
+            ctx.fillStyle = isDark ? (colorDark.value || '#000') : (colorLight.value || '#fff');
+            ctx.fillRect(Math.round(x), Math.round(y), Math.ceil(cellSize), Math.ceil(cellSize));
+            x += cellSize;
+          });
+          y += cellSize;
+        });
+        callback(canvas);
+        return;
+      }
+
+      alert('지원되지 않는 QR 요소 형식입니다.');
+    }
+
+    // PNG 다운로드
+    function downloadPNG() {
+      if (!qrcodeContainer.firstElementChild) { alert('먼저 QR 코드를 생성하세요.'); return; }
+      domToCanvas((canvas) => {
+        const link = document.createElement('a');
+        link.href = canvas.toDataURL('image/png');
+        link.download = 'qr-code.png';
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+      });
+    }
+
+    // 텍스트 복사
+    function copyText() {
+      const txt = (textInput.value || '').trim();
+      if (!txt) { alert('복사할 텍스트가 없습니다.'); return; }
+      navigator.clipboard.writeText(txt).then(()=> {
+        alert('텍스트가 클립보드에 복사되었습니다.');
+      }).catch(()=> {
+        alert('복사 실패 — 수동으로 선택해 주세요.');
+      });
+    }
+
+    // 초기화
+    function clearAll() {
+      textInput.value = '';
+      sizeInput.value = 300;
+      ecLevel.value = 'M';
+      colorDark.value = '#000000';
+      colorLight.value = '#ffffff';
+      marginInput.value = 4;
+      labelInput.value = '';
+      qrcodeContainer.innerHTML = '';
+      removeLabel();
+      qrInfo.innerText = '';
+    }
+
+    // 실시간 미리보기 (짧은 딜레이로 반응)
+    let previewTimer = null;
+    function schedulePreview(){
+      if (previewTimer) clearTimeout(previewTimer);
+      previewTimer = setTimeout(()=> {
+        if (textInput.value.trim()) generate();
+      }, 350);
+    }
+
+    // 이벤트 바인딩
+    generateBtn.addEventListener('click', generate);
+    downloadBtn.addEventListener('click', downloadPNG);
+    copyBtn.addEventListener('click', copyText);
+    clearBtn.addEventListener('click', clearAll);
+    textInput.addEventListener('input', schedulePreview);
+    sizeInput.addEventListener('change', schedulePreview);
+    ecLevel.addEventListener('change', schedulePreview);
+    colorDark.addEventListener('change', schedulePreview);
+    colorLight.addEventListener('change', schedulePreview);
+    marginInput.addEventListener('change', schedulePreview);
+    labelInput.addEventListener('input', schedulePreview);
+
+    // 자동 예시 텍스트 넣기 (룸)
+    textInput.placeholder = '예) https://example.com 또는 연락처/메시지 등 입력';
+    // 페이지 로드 시 간단 예시
+    textInput.value = 'https://example.com';
+    generate();
+
+  </script>
+</body>
+</html>

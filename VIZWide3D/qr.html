@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- 모바일 최적화 -->
+  <title>QR 코드 스캔 예제</title>
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 10px;
+    }
+    h2 {
+      font-size: 1.5em;
+      margin: 15px 0;
+    }
+    #reader {
+      width: 80%;
+      max-width: 300px;     /* 조금 작게 */
+      margin: 0 auto;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+    #result {
+      margin-top: 15px;
+      font-size: 1.1em;
+      color: green;
+      word-break: break-all;
+      padding: 5px;
+    }
+    select {
+      margin: 15px auto;
+      padding: 12px;
+      font-size: 1.2em;       /* 글씨 크게 */
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: 2px solid #888;
+      background: #f9f9f9;
+      height: 50px;           /* 터치하기 좋은 높이 */
+    }
+  </style>
+</head>
+<body>
+  <h2>📷 QR 코드 스캔</h2>
+  <select id="cameraSelect"></select>
+  <div id="reader"></div>
+  <div id="result">QR 코드 결과가 여기에 표시됩니다.</div>
+
+  <script>
+    let html5QrCode;
+    let currentCameraId;
+
+    // ✅ QR 코드 인식 성공 시
+    function onScanSuccess(decodedText) {
+      document.getElementById('result').innerText = `✅ 인식된 QR 코드: ${decodedText}`;
+    }
+
+    // 실패 로그
+    function onScanFailure(error) {
+      console.warn(`QR 인식 실패: ${error}`);
+    }
+
+    // ✅ 스캐너 시작 함수
+    function startScanner(cameraId) {
+      const qrBoxSize = Math.min(window.innerWidth * 0.8, 300); // 반응형 크기
+
+      if (html5QrCode) {
+        // 이미 실행 중이면 멈추고 새 카메라로 시작
+        html5QrCode.stop().then(() => {
+          html5QrCode.start(cameraId, { fps: 10, qrbox: qrBoxSize }, onScanSuccess, onScanFailure);
+        }).catch(err => {
+          console.error("카메라 전환 실패:", err);
+        });
+      } else {
+        // 처음 시작할 때 Html5Qrcode 객체 생성
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(cameraId, { fps: 10, qrbox: qrBoxSize }, onScanSuccess, onScanFailure);
+      }
+    }
+
+    // ✅ 스캐너 완전 종료 함수 (원할 때 호출 가능)
+    function stopScanner() {
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear(); // 이때만 clear 호출
+        }).catch(err => {
+          console.error("스캐너 종료 실패:", err);
+        });
+      }
+    }
+
+    // ✅ 카메라 장치 가져오기
+    Html5Qrcode.getCameras().then(cameras => {
+      const select = document.getElementById("cameraSelect");
+
+      cameras.forEach(camera => {
+        const option = document.createElement("option");
+        option.value = camera.id;
+        option.text = camera.label || `카메라 ${camera.id}`;
+        select.appendChild(option);
+      });
+
+      // 기본 선택: 후면 카메라 우선
+      const backCam = cameras.find(cam =>
+        cam.label.toLowerCase().includes("back") ||
+        cam.label.toLowerCase().includes("rear") ||
+        cam.label.toLowerCase().includes("environment")
+      );
+      currentCameraId = backCam ? backCam.id : cameras[0].id;
+      select.value = currentCameraId;
+
+      // 기본 카메라 실행
+      startScanner(currentCameraId);
+
+      // 사용자가 카메라 변경 시
+      select.addEventListener("change", (e) => {
+        currentCameraId = e.target.value;
+        startScanner(currentCameraId);
+      });
+    }).catch(err => {
+      alert("카메라를 찾을 수 없습니다.");
+      console.error(err);
+    });
+
+    // ✅ 화면 크기 변경 시 QR 박스 자동 조정
+    window.addEventListener("resize", () => {
+      if (currentCameraId) {
+        startScanner(currentCameraId);
+      }
+    });
+  </script>
+</body>
+</html>

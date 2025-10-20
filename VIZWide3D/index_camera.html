@@ -1,0 +1,200 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+
+    <!-- 예제 UI css -->
+    <link rel="stylesheet" href="./Resource/css/UISideBar.css">
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+        import UISideBar from "./Resource/js/UISideBar.js";
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        //파일 로딩 완료 시점 확인
+        let onModelLoadingCompleted = (e, loadType) => {
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE) {
+                console.log("onLoad Structure :: ", e);
+                //구조정보 로딩 완료
+            }
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH) {
+                console.log("onLoad Mesh :: ", e);
+                //모델정보 로딩 완료
+            }
+
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.HEADER) {
+                console.log("onLoad Header :: ", e);
+                //모델 로딩완료
+            }
+        };
+
+        let onConfiguration = () => {
+            //초기 환경설정 변경
+            //vizcore.Main.Configuration.Default.Path = "../";
+            //WebAssembly 경로 설정
+            //vizcore.Configuration.Default.WebAssembly.Path = "../";
+        };
+
+        let onBefore = () => {
+        };
+
+        let onInit = () => {
+            //ContextMenu 사용
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            //vizcore.Model.OpenHeader("VIZCore3D/Model/A101/A101_wh.vizw", "Sample", onModelLoadingCompleted);
+            vizcore.Model.OpenHeader("VIZCore3D/Model/A101/A101_wh.vizw", "Sample", onModelLoadingCompleted);
+
+            //예제 테스트 UI 생성
+            createExample();
+        };
+
+        let createExample = () => {
+            let example = new UISideBar(vizcore);
+
+            example.Init();
+
+            //자유 궤도 사용 설정으로 Camera 회전 자유롭게
+            vizcore.View.Control.EnablePivotRotate(false);
+
+            example.AddTitle("카메라 예제");
+            example.AddButton("+X", cbSetCameraPlusX);
+            example.AddButton("-X", cbSetCameraMinusX);
+            example.AddButton("+Y", cbSetCameraPlusY);
+            example.AddButton("-Y", cbSetCameraMinusY);
+            example.AddButton("+Z", cbSetCameraPlusZ);
+            example.AddButton("-Z", cbSetCameraMinusZ);
+            example.AddButton("+ISO", cbSetCameraPlusISO);
+            example.AddButton("-ISO", cbSetCameraMinusISO);
+            example.AddButton("줌인", cbCameraZoomIn);
+            example.AddButton("줌아웃", cbCameraZoomOut);
+            example.AddButton("Matrix 카메라 셋팅", cbSetCameraData);
+            example.AddButton("카메라 정보 반환", cbGetCameraData);
+        };
+
+        /* Camera Callback Function*/
+        //Camera 설정 (+x)
+        let cbSetCameraPlusX = () => {
+            vizcore.View.ViewRightElevation();
+        };
+
+        //Camera 설정 (-x)
+        let cbSetCameraMinusX = () => {
+            vizcore.View.ViewLeftElevation();
+        };
+
+        //Camera 설정 (+Y)
+        let cbSetCameraPlusY = () => {
+            vizcore.View.ViewBackSection();
+        };
+
+        //Camera 설정 (-Y)
+        let cbSetCameraMinusY = () => {
+            vizcore.View.ViewFrontSection();
+        };
+
+        //Camera 설정 (+Z)
+        let cbSetCameraPlusZ = () => {
+            vizcore.View.ViewTopPlan();
+        };
+
+        //Camera 설정 (-Z)
+        let cbSetCameraMinusZ = () => {
+            vizcore.View.ViewBottomPlan();
+        };
+
+        //Camera 설정 (+ISO)
+        let cbSetCameraPlusISO = () => {
+            vizcore.View.ViewISOPlus();
+        };
+
+        //Camera 설정 (-ISO)
+        let cbSetCameraMinusISO = () => {
+            vizcore.View.ViewISOMinus();
+        };
+
+        let cbCameraZoomIn = () => {
+            vizcore.View.CameraZoomIn(1.0);
+        };
+
+        let cbCameraZoomOut = () => {
+            vizcore.View.CameraZoomOut(1.0);
+        };
+
+        //Matrix 카메라 설정
+        let cbSetCameraData = () => {
+            //현재 카메라 정보 반환
+            let camera = vizcore.View.GetCameraData();
+
+            let matrix = [
+                -0.7368565242067521,
+                0.2967320447690597,
+                -0.6074475749734406,
+                0,
+                -0.6760491570395907,
+                -0.32342166353174456,
+                0.6620845601767283,
+                0,
+                1.450300251031817e-10,
+                0.8985257487493219,
+                0.4389208115759255,
+                0,
+                -10.064568224270648,
+                -17.323700294701606,
+                -10.113302018580471,
+                1
+            ];
+
+            let zoom = 1.6031616657031031;
+
+            camera.matrix_camera.elements = matrix;
+            camera.zoom = zoom;
+
+            //현재 카메라 정보 설정
+            vizcore.View.SetCameraData(camera);
+
+            //화면 다시 그리기
+            vizcore.View.UpdateGLWindow();
+            vizcore.View.ResizeGLWindow();
+            vizcore.Render();
+        };
+
+        //카메라 정보 반환
+        let cbGetCameraData = () => {
+            //현재 카메라 정보 반환
+            let camera = vizcore.View.GetCameraData();
+            console.log("카메라 정보: ", camera);
+
+            alert("개발자도구(F12)의 콘솔(Console)탭을 통해 관련 예제 결과를 확인해주세요.");
+        };
+
+        let option = {
+            event: {
+                onInit: onInit,
+                onBefore: onBefore,
+                onConfiguration: onConfiguration,
+            }
+        };
+
+        vizcore.Init(option);
+    </script>
+</head>
+
+<body>
+    <div class="VIZWeb_Main">
+        <div id="view"></div>
+    </div>
+</body>
+
+</html>

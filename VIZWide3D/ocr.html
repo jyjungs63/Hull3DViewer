@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover" />
+  <title>모바일 웹 OCR (Tesseract.js) 예제</title>
+
+  <!-- Tesseract.js (worker API 사용) -->
+  <script src="https://unpkg.com/tesseract.js@2.1.5/dist/tesseract.min.js"></script>
+
+  <style>
+    :root{
+      --bg:#f6f7fb;
+      --panel:#ffffff;
+      --accent:#157efb;
+      --muted:#6b7280;
+      --danger:#e11d48;
+    }
+    html,body{height:100%; margin:0; background:var(--bg); font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Noto Sans KR", "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; color:#111;}
+    .wrap{max-width:900px; margin:0 auto; padding:12px;}
+    header{display:flex;align-items:center;gap:12px;margin-bottom:8px;}
+    h1{font-size:1.1rem;margin:0;}
+    p.lead{margin:0;color:var(--muted);font-size:0.9rem;}
+
+    .camera-panel{background:var(--panel);border-radius:12px;padding:10px;box-shadow:0 6px 18px rgba(16,24,40,0.06); margin-top:12px;}
+    .video-wrap{position:relative; width:100%; padding-top:56%; overflow:hidden; border-radius:10px; background:#000;}
+    video#preview{position:absolute; inset:0; width:100%; height:100%; object-fit:cover; transform:scaleX(1);}
+    .controls{display:flex;gap:8px; margin-top:10px; flex-wrap:wrap;}
+    select,input,button{font-size:16px;}
+    select#cameraSelect{flex:1; min-width:140px; padding:10px;border-radius:8px;border:1px solid #ddd;background:#fff;}
+    .btn{padding:12px 14px;border-radius:10px;border:0;background:var(--accent);color:#fff;font-weight:600;min-width:120px;box-shadow:0 6px 12px rgba(21,126,251,0.12);}
+    .btn.secondary{background:#fff;color:#111;border:1px solid #ddd;box-shadow:none;}
+    .btn.danger{background:var(--danger);}
+
+    .tools{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+    .result-panel{margin-top:12px;background:var(--panel);padding:12px;border-radius:10px;}
+    #snapCanvas{display:none;width:100%;border-radius:8px;margin-top:8px;max-height:50vh;object-fit:contain;}
+    #progress{margin-top:8px;height:8px;background:#eee;border-radius:8px;overflow:hidden;}
+    #progress > div{height:100%;width:0;background:var(--accent);transition:width .15s ease}
+
+    .result-text{white-space:pre-wrap;font-size:0.95rem;color:#111;margin-top:8px}
+    .small{font-size:0.85rem;color:var(--muted)}
+    .row{display:flex;gap:8px;align-items:center}
+    @media (max-width:420px){
+      .btn{flex:1; min-width:0;}
+      select#cameraSelect{min-width:0;}
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div>
+        <h1>모바일 웹 OCR</h1>
+        <p class="lead">카메라로 촬영하여 문자(영/한)를 인식합니다. (클라이언트 사이드)</p>
+      </div>
+    </header>
+
+    <section class="camera-panel">
+      <div class="video-wrap">
+        <video id="preview" autoplay playsinline></video>
+      </div>
+
+      <div class="controls">
+        <select id="cameraSelect" aria-label="카메라 선택"><option>카메라 불러오는 중...</option></select>
+        <button id="flipBtn" class="btn secondary">전/후면 전환</button>
+        <button id="snapBtn" class="btn">촬영 (OCR)</button>
+      </div>
+
+      <div class="tools">
+        <label class="small">언어:
+          <select id="langSelect" style="margin-left:6px;padding:8px;border-radius:8px;">
+            <option value="eng">English (eng)</option>
+            <option value="kor">한국어 (kor) — 용량 큼</option>
+            <option value="eng+kor">영+한 (eng+kor)</option>
+          </select>
+        </label>
+
+        <label class="small">품질:
+          <select id="scaleSelect" style="margin-left:6px;padding:8px;border-radius:8px;">
+            <option value="1">원본</option>
+            <option value="0.8">80%</option>
+            <option value="0.6">60% (빠름)</option>
+            <option value="0.4">40% (가장 빠름)</option>
+          </select>
+        </label>
+
+        <button id="pauseBtn" class="btn secondary">일시정지</button>
+        <button id="clearBtn" class="btn secondary">결과 초기화</button>
+      </div>
+
+      <canvas id="snapCanvas"></canvas>
+
+      <div id="progress" aria-hidden="true"><div></div></div>
+      <div id="status" class="small" style="margin-top:6px">상태: 대기중</div>
+    </section>
+
+    <section class="result-panel">
+      <div style="display:flex;gap:8px;align-items:center;justify-content:space-between;">
+        <div><strong>인식 결과</strong></div>
+        <div style="display:flex;gap:8px;">
+          <button id="downloadImg" class="btn secondary">이미지 다운로드</button>
+          <button id="copyText" class="btn">복사</button>
+        </div>
+      </div>
+
+      <div id="resultText" class="result-text">아직 인식된 텍스트가 없습니다.</div>
+    </section>
+  </div>
+
+  <script>
+  (function(){
+    const video = document.getElementById('preview');
+    const cameraSelect = document.getElementById('cameraSelect');
+    const snapBtn = document.getElementById('snapBtn');
+    const flipBtn = document.getElementById('flipBtn');
+    const pauseBtn = document.getElementById('pauseBtn');
+    const clearBtn = document.getElementById('clearBtn');
+    const snapCanvas = document.getElementById('snapCanvas');
+    const progressBar = document.querySelector('#progress > div');
+    const progressWrap = document.getElementById('progress');
+    const statusEl = document.getElementById('status');
+    const resultTextEl = document.getElementById('resultText');
+    const langSelect = document.getElementById('langSelect');
+    const scaleSelect = document.getElementById('scaleSelect');
+    const downloadImgBtn = document.getElementById('downloadImg');
+    const copyTextBtn = document.getElementById('copyText');
+
+    let currentStream = null;
+    let currentDeviceId = null;
+    let devices = [];
+    let usingFacingMode = 'environment'; // 기본 후면
+    let worker = null;
+    let isPaused = false;
+
+    // 유틸: 상태 표시
+    function setStatus(t){
+      statusEl.innerText = '상태: ' + t;
+    }
+
+    // 카메라 열기 (deviceId 우선, 없으면 facingMode 사용)
+    async function openCamera(deviceId){
+      if (currentStream){
+        // 기존 스트림 중지
+        currentStream.getTracks().forEach(t => t.stop());
+        currentStream = null;
+      }
+
+      try {
+        const constraints = deviceId ? { video: { deviceId: { exact: deviceId } } } :
+                          { video: { facingMode: { exact: usingFacingMode } } };
+
+        // 모바일에서 너무 큰 해상도는 성능 떨어짐 -> 적절한 max 제한 (권장)
+        // 단, 여기서는 브라우저가 적절히 해상도 선택
+        const stream = await navigator.mediaDevices.getUserMedia(constraints);
+        video.srcObject = stream;
+        currentStream = stream;
+        // deviceId 정보 업데이트
+        const track = stream.getVideoTracks()[0];
+        const settings = track.getSettings();
+        currentDeviceId = settings.deviceId || deviceId || null;
+        setStatus('카메라 활성화됨');
+      } catch (err){
+        console.error('카메라 열기 실패', err);
+        setStatus('카메라 열기 실패: ' + (err && err.message ? err.message : err));
+        alert('카메라 권한을 허용했는지 확인하세요.\n에러: ' + (err && err.message ? err.message : err));
+      }
+    }
+
+    // 페이지 로드 시 장치 목록
+    async function listCameras(){
+      try {
+        const all = await navigator.mediaDevices.enumerateDevices();
+        devices = all.filter(d => d.kind === 'videoinput');
+        cameraSelect.innerHTML = '';
+        devices.forEach((d, idx) => {
+          const opt = document.createElement('option');
+          opt.value = d.deviceId;
+          opt.text = d.label || `카메라 ${idx+1}`;
+          cameraSelect.appendChild(opt);
+        });
+
+        if (devices.length === 0){
+          cameraSelect.innerHTML = '<option>카메라 없음</option>';
+          setStatus('카메라를 찾을 수 없습니다.');
+          return;
+        }
+
+        // 우선 후면 카메라 선택 시도
+        const back = devices.find(d => /back|rear|environment/i.test(d.label));
+        const preferred = back ? back.deviceId : devices[0].deviceId;
+        cameraSelect.value = preferred;
+        await openCamera(preferred);
+      } catch (err){
+        console.error('장치 목록 불러오기 실패', err);
+        setStatus('장치 목록 불러오기 실패');
+      }
+    }
+
+    // 스냅샷을 찍어 캔버스에 그리기
+    function takeSnapshot(){
+      if (!currentStream) { alert('카메라가 활성화되어 있지 않습니다.'); return null; }
+      const videoTrack = currentStream.getVideoTracks()[0];
+      const settings = videoTrack.getSettings();
+
+      // 캔버스 크기 설정: 스케일 옵션 적용
+      const scale = parseFloat(scaleSelect.value || '1');
+      const w = Math.round((settings.width || video.videoWidth || 1280) * scale);
+      const h = Math.round((settings.height || video.videoHeight || 720) * scale);
+
+      // 안전 fallback: video element size 사용
+      const canvasW = (w > 0) ? w : Math.round(video.videoWidth * scale);
+      const canvasH = (h > 0) ? h : Math.round(video.videoHeight * scale);
+
+      snapCanvas.width = canvasW;
+      snapCanvas.height = canvasH;
+      const ctx = snapCanvas.getContext('2d');
+      // 흑백 대비 강화(선택) - 현재 그냥 원본 복사
+      ctx.drawImage(video, 0, 0, canvasW, canvasH);
+      return snapCanvas.toDataURL('image/jpeg', 0.9);
+    }
+
+    // Tesseract worker 초기화
+    async function ensureWorker(lang){
+      if (worker) {
+        // 이미 초기화된 worker가 있고 같은 언어라면 재사용
+        // (worker 내부 상태 확인은 복잡하므로, 간단히 재사용)
+        return;
+      }
+      setStatus('OCR 엔진 로딩...');
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '10%';
+
+      worker = Tesseract.createWorker({
+        // logger: m => console.log(m)
+        logger: m => {
+          // m: { status, progress }
+          if (m && m.status){
+            setStatus('OCR: ' + m.status + (m.progress ? ` (${Math.round(m.progress*100)}%)` : ''));
+          }
+          if (typeof m.progress === 'number'){
+            const pct = Math.round(m.progress * 100);
+            progressBar.style.width = pct + '%';
+          }
+        }
+      });
+
+      try {
+        await worker.load();
+        progressBar.style.width = '20%';
+        await worker.loadLanguage(lang);
+        progressBar.style.width = '40%';
+        await worker.initialize(lang);
+        progressBar.style.width = '60%';
+        // optional: set parameters (PSM, whitelist 등)
+        // await worker.setParameters({ tessedit_pageseg_mode: Tesseract.PSM.SINGLE_BLOCK });
+        progressBar.style.width = '80%';
+        setStatus('OCR 엔진 준비 완료');
+        progressBar.style.width = '0%';
+        progressWrap.style.display = 'none';
+      } catch (err) {
+        console.error('worker init error', err);
+        setStatus('OCR 엔진 초기화 실패');
+        progressWrap.style.display = 'none';
+        throw err;
+      }
+    }
+
+    // OCR 실행
+    async function doOCR(dataUrl, lang){
+      setStatus('인식 중...');
+      progressWrap.style.display = 'block';
+      progressBar.style.width = '5%';
+
+      try {
+        // worker가 없으면 로드
+        if (!worker) {
+          await ensureWorker(lang);
+        }
+        // 언어 재설정: 사용자가 언어를 바꿨다면 initialize 재호출 필요
+        // (간단하게 매번 initialize 해주면 안전)
+        await worker.loadLanguage(lang);
+        await worker.initialize(lang);
+
+        // 실제 인식
+        const { data: { text } } = await worker.recognize(dataUrl);
+        progressBar.style.width = '100%';
+        resultTextEl.innerText = text.trim() || '(텍스트 없음)';
+        setStatus('인식 완료');
+      } catch (err){
+        console.error('OCR 에러', err);
+        setStatus('인식 실패: ' + (err.message || err));
+        alert('OCR 중 오류가 발생했습니다. 콘솔을 확인하세요.');
+      } finally {
+        progressWrap.style.display = 'none';
+        progressBar.style.width = '0%';
+      }
+    }
+
+    // 초기화: 이벤트 바인딩
+    cameraSelect.addEventListener('change', async (e) => {
+      const id = e.target.value;
+      if (!id) return;
+      await openCamera(id);
+    });
+
+    flipBtn.addEventListener('click', async () => {
+      // 전/후면 전환: facingMode 토글 (대체로 deviceId로 재설정)
+      usingFacingMode = usingFacingMode === 'environment' ? 'user' : 'environment';
+      // 만약 deviceId로 접근 가능한 경우, 가장 적합한 device 선택
+      const candidate = devices.find(d => {
+        return usingFacingMode === 'environment' ? /back|rear|environment/i.test(d.label) : /front|face|user|front camera/i.test(d.label);
+      });
+      if (candidate){
+        cameraSelect.value = candidate.deviceId;
+        await openCamera(candidate.deviceId);
+      } else {
+        // fallback: 요청으로 재열기
+        await openCamera(null);
+      }
+    });
+
+    snapBtn.addEventListener('click', async () => {
+      if (!currentStream) { alert('카메라가 준비되지 않았습니다.'); return; }
+      const dataUrl = takeSnapshot();
+      if (!dataUrl) { alert('촬영 실패'); return; }
+
+      // 스냅샷을 보이기
+      snapCanvas.style.display = 'block';
+      // 이미지는 canvas에 그려져 있으므로 그대로 OCR 실행
+      const lang = langSelect.value || 'eng';
+      setStatus('촬영 완료 — OCR 시작');
+      await doOCR(dataUrl, lang);
+    });
+
+    pauseBtn.addEventListener('click', () => {
+      if (!currentStream) return;
+      if (!isPaused){
+        currentStream.getVideoTracks().forEach(t => t.enabled = false);
+        pauseBtn.innerText = '재개';
+        setStatus('일시정지됨');
+        isPaused = true;
+      } else {
+        currentStream.getVideoTracks().forEach(t => t.enabled = true);
+        pauseBtn.innerText = '일시정지';
+        setStatus('카메라 활성화됨');
+        isPaused = false;
+      }
+    });
+
+    clearBtn.addEventListener('click', () => {
+      resultTextEl.innerText = '아직 인식된 텍스트가 없습니다.';
+      setStatus('대기중');
+    });
+
+    // 이미지 다운로드
+    downloadImgBtn.addEventListener('click', () => {
+      if (!snapCanvas.width) { alert('다운로드할 이미지가 없습니다.'); return; }
+      const link = document.createElement('a');
+      link.href = snapCanvas.toDataURL('image/jpeg', 0.95);
+      link.download = 'ocr_snapshot.jpg';
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    });
+
+    // 텍스트 복사
+    copyTextBtn.addEventListener('click', async () => {
+      const txt = resultTextEl.innerText;
+      if (!txt || txt.includes('아직 인식된 텍스트')) { alert('복사할 텍스트가 없습니다.'); return; }
+      try {
+        await navigator.clipboard.writeText(txt);
+        alert('텍스트가 복사되었습니다.');
+      } catch (err) {
+        alert('클립보드 복사 실패. 수동으로 선택하세요.');
+      }
+    });
+
+    // 페이지 언로드 시 worker 정리
+    async function cleanup(){
+      try {
+        if (worker){
+          await worker.terminate();
+          worker = null;
+        }
+        if (currentStream){
+          currentStream.getTracks().forEach(t => t.stop());
+          currentStream = null;
+        }
+      } catch(e){ console.warn(e); }
+    }
+    window.addEventListener('beforeunload', cleanup);
+
+    // 초기 실행
+    (async function init(){
+      if (!('mediaDevices' in navigator) || !navigator.mediaDevices.getUserMedia) {
+        alert('이 브라우저는 카메라 접근을 지원하지 않습니다.');
+        setStatus('브라우저가 카메라 API를 지원하지 않음');
+        return;
+      }
+      progressWrap.style.display = 'none';
+      await listCameras();
+      setStatus('준비됨');
+    })();
+
+  })();
+  </script>
+</body>
+</html>

@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>QR 코드 PDF 자동 생성기</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf-lib/1.17.1/pdf-lib.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      margin: 0;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 15px;
+      padding: 30px;
+      box-shadow: 0 15px 35px rgba(0, 0, 0, 0.1);
+    }
+
+    h2 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+    }
+
+    .input-group {
+      margin-bottom: 20px;
+    }
+
+    label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: bold;
+      color: #555;
+    }
+
+    input[type="text"], textarea {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #e1e5e9;
+      border-radius: 8px;
+      font-size: 16px;
+      outline: none;
+      box-sizing: border-box;
+    }
+
+    input[type="text"]:focus, textarea:focus {
+      border-color: #4285f4;
+    }
+
+    textarea {
+      height: 100px;
+      resize: vertical;
+      font-family: monospace;
+    }
+
+    button {
+      width: 100%;
+      margin: 10px 0;
+      padding: 15px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      transition: background 0.3s;
+    }
+
+    .btn-primary {
+      background: #4285f4;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #3367d6;
+    }
+
+    .btn-success {
+      background: #28a745;
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: #218838;
+    }
+
+    .btn-info {
+      background: #17a2b8;
+      color: white;
+    }
+
+    .btn-info:hover {
+      background: #138496;
+    }
+
+    #qrPreview {
+      text-align: center;
+      margin: 20px 0;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 8px;
+      min-height: 100px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .status {
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 5px;
+      text-align: center;
+    }
+
+    .status.success {
+      background: #d4edda;
+      color: #155724;
+      border: 1px solid #c3e6cb;
+    }
+
+    .status.error {
+      background: #f8d7da;
+      color: #721c24;
+      border: 1px solid #f5c6cb;
+    }
+
+    .example-data {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-family: monospace;
+      font-size: 14px;
+      white-space: pre-wrap;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>📄 QR 코드 PDF 자동 생성기</h2>
+    
+    <div class="input-group">
+      <label for="textInput">QR 코드에 넣을 텍스트:</label>
+      <input type="text" id="textInput" placeholder="URL 또는 텍스트를 입력하세요" value="https://example.com">
+    </div>
+
+    <div class="input-group">
+      <label for="jsonInput">JSON 데이터 (선택사항):</label>
+      <textarea id="jsonInput" placeholder='{"name": "홍길동", "phone": "010-1234-5678"}'></textarea>
+      <button type="button" class="btn-info" onclick="loadExampleData()">📋 예제 데이터 로드</button>
+    </div>
+
+    <button class="btn-primary" onclick="generateAndDownloadPDF()">🚀 QR 코드 PDF 바로 생성 및 다운로드</button>
+
+    <div id="qrPreview">
+      <p>QR 코드 미리보기가 여기에 표시됩니다</p>
+    </div>
+
+    <button class="btn-success hidden" id="downloadBtn" onclick="downloadPDF()">📥 PDF 다운로드</button>
+
+    <div id="status"></div>
+
+    <div class="example-data">
+예제 JSON 데이터:
+{
+  "appConfig": {
+    "version": "1.0.3",
+    "lastUpdated": "2025-09-23T14:25:00+09:00",
+    "features": {
+      "darkMode": true,
+      "notifications": {
+        "email": true,
+        "sms": false,
+        "push": true
+      },
+      "language": "ko-KR"
+    }
+  }
+}
+    </div>
+  </div>
+
+  <script>
+    let currentPdfBlob = null;
+    const users = [
+      {
+        "appConfig": {
+          "version": "1.0.3",
+          "lastUpdated": "2025-09-23T14:25:00+09:00",
+          "features": {
+            "darkMode": true,
+            "notifications": {
+              "email": true,
+              "sms": false,
+              "push": true
+            },
+            "language": "ko-KR"
+          }
+        },
+      }
+    ];
+
+    function showStatus(message, type = 'success') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+      
+      // 3초 후 메시지 제거
+      setTimeout(() => {
+        statusDiv.innerHTML = '';
+      }, 3000);
+    }
+
+    function loadExampleData() {
+      document.getElementById('jsonInput').value = JSON.stringify(users[0], null, 2);
+      showStatus('예제 데이터가 로드되었습니다!');
+    }
+
+    async function generateAndDownloadPDF() {
+      try {
+        // PDF-lib 사용 가능 여부 확인
+        if (typeof PDFLib === 'undefined') {
+          throw new Error('PDF 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+        }
+
+        // QRCode 라이브러리 확인
+        if (typeof QRCode === 'undefined') {
+          throw new Error('QR 코드 라이브러리가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
+        }
+
+        showStatus('QR 코드와 PDF를 생성하는 중...', 'success');
+        
+        // 입력 데이터 준비
+        const textInput = document.getElementById("textInput").value.trim();
+        const jsonInput = document.getElementById("jsonInput").value.trim();
+        
+        let qrData;
+        if (jsonInput) {
+          try {
+            // JSON 유효성 검사
+            const parsedJson = JSON.parse(jsonInput);
+            qrData = JSON.stringify(parsedJson);
+          } catch (e) {
+            console.log('JSON 파싱 오류:', e);
+            showStatus('JSON 형식이 올바르지 않습니다. 텍스트로 처리합니다.', 'error');
+            qrData = jsonInput;
+          }
+        } else {
+          qrData = textInput || "https://example.com";
+        }
+
+        console.log('QR 데이터:', qrData);
+
+        // 숨겨진 div에서 QR 코드 생성
+        const hiddenDiv = document.createElement('div');
+        hiddenDiv.id = 'hiddenQR';
+        hiddenDiv.style.position = 'absolute';
+        hiddenDiv.style.left = '-9999px';
+        hiddenDiv.style.top = '-9999px';
+        document.body.appendChild(hiddenDiv);
+
+        // QR 코드 생성 (Promise로 감싸기)
+        const qrDataUrl = await new Promise((resolve, reject) => {
+          try {
+            console.log('QR 코드 생성 시작');
+            
+            // 기존 QR 코드 제거
+            hiddenDiv.innerHTML = '';
+            
+            const qr = new QRCode(hiddenDiv, {
+              text: qrData,
+              width: 256,
+              height: 256,
+              colorDark: "#000000",
+              colorLight: "#ffffff",
+              correctLevel: QRCode.CorrectLevel.H
+            });
+
+            // QR 코드 생성 완료까지 충분히 대기
+            setTimeout(() => {
+              try {
+                const canvas = hiddenDiv.querySelector('canvas');
+                const img = hiddenDiv.querySelector('img');
+                
+                if (canvas) {
+                  console.log('Canvas 발견, DataURL 생성');
+                  const dataUrl = canvas.toDataURL("image/png");
+                  resolve(dataUrl);
+                } else if (img) {
+                  console.log('Image 발견, src 사용');
+                  resolve(img.src);
+                } else {
+                  console.error('QR 요소를 찾을 수 없음:', hiddenDiv.innerHTML);
+                  reject(new Error('QR 코드 생성에 실패했습니다.'));
+                }
+              } catch (err) {
+                console.error('QR 코드 처리 오류:', err);
+                reject(err);
+              }
+            }, 500); // 대기 시간 증가
+          } catch (error) {
+            console.error('QR 코드 생성 오류:', error);
+            reject(error);
+          }
+        });
+
+        console.log('QR DataURL 생성 완료');
+
+        // 미리보기 업데이트
+        const previewDiv = document.getElementById('qrPreview');
+        previewDiv.innerHTML = `
+          <h4>생성된 QR 코드:</h4>
+          <img src="${qrDataUrl}" alt="QR Code" style="border: 1px solid #ddd; border-radius: 5px; max-width: 200px;">
+          <p style="margin-top: 10px; font-size: 12px; color: #666;">데이터: ${qrData.length > 50 ? qrData.substring(0, 50) + '...' : qrData}</p>
+        `;
+
+        // PDF 생성
+        console.log('PDF 생성 시작');
+        const { PDFDocument, rgb } = PDFLib;
+        const pdfDoc = await PDFDocument.create();
+        const page = pdfDoc.addPage([595, 842]); // A4 크기
+
+        console.log('PDF 페이지 생성 완료');
+
+        // 기본 폰트 사용 (한글 문제 해결)
+        const font = await pdfDoc.embedFont(PDFLib.StandardFonts.Helvetica);
+        const boldFont = await pdfDoc.embedFont(PDFLib.StandardFonts.HelveticaBold);
+
+        console.log('폰트 임베드 완료');
+
+        // 텍스트를 ASCII만 사용하도록 변환
+        function toSafeText(text) {
+          return text
+            .replace(/[가-힣]/g, '?') // 한글을 ?로 대체
+            .replace(/[^\x00-\x7F]/g, '?'); // ASCII가 아닌 문자를 ?로 대체
+        }
+
+        // 제목
+        page.drawText("QR Code PDF Document", {
+          x: 50,
+          y: 750,
+          size: 24,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        });
+
+        // 생성 날짜
+        const now = new Date();
+        const dateStr = now.toISOString().split('T')[0]; // YYYY-MM-DD 형식
+        page.drawText(`Generated: ${dateStr}`, {
+          x: 50,
+          y: 720,
+          size: 12,
+          font: font,
+          color: rgb(0.5, 0.5, 0.5),
+        });
+
+        console.log('PDF 텍스트 작성 완료');
+
+        // QR 코드 이미지 임베드 및 삽입
+        try {
+          const qrImage = await pdfDoc.embedPng(qrDataUrl);
+          const qrSize = 150;
+          page.drawImage(qrImage, {
+            x: 50,
+            y: 500,
+            width: qrSize,
+            height: qrSize,
+          });
+          console.log('QR 이미지 삽입 완료');
+        } catch (imgError) {
+          console.error('QR 이미지 삽입 오류:', imgError);
+          // QR 이미지 삽입 실패시 텍스트로 대체
+          page.drawText("QR Code insertion failed", {
+            x: 50,
+            y: 550,
+            size: 12,
+            font: font,
+            color: rgb(1, 0, 0),
+          });
+        }
+
+        // QR 코드 설명
+        page.drawText("QR Code Data:", {
+          x: 220,
+          y: 600,
+          size: 14,
+          font: boldFont,
+          color: rgb(0, 0, 0),
+        });
+
+        // 데이터 내용 (안전한 텍스트로 변환)
+        const safeData = toSafeText(qrData);
+        const maxLineLength = 45;
+        const lines = [];
+        let currentLine = '';
+        
+        for (let i = 0; i < safeData.length; i++) {
+          if (currentLine.length >= maxLineLength || safeData[i] === '\n') {
+            lines.push(currentLine);
+            currentLine = safeData[i] === '\n' ? '' : safeData[i];
+          } else {
+            currentLine += safeData[i];
+          }
+        }
+        if (currentLine) lines.push(currentLine);
+
+        // 최대 15줄까지만 표시
+        lines.slice(0, 15).forEach((line, index) => {
+          try {
+            page.drawText(line || ' ', {
+              x: 220,
+              y: 580 - (index * 15),
+              size: 10,
+              font: font,
+              color: rgb(0.3, 0.3, 0.3),
+            });
+          } catch (textError) {
+            console.error('텍스트 렌더링 오류:', textError, 'Line:', line);
+            page.drawText('[Text rendering error]', {
+              x: 220,
+              y: 580 - (index * 15),
+              size: 10,
+              font: font,
+              color: rgb(1, 0, 0),
+            });
+          }
+        });
+
+        if (lines.length > 15) {
+          page.drawText('...more data', {
+            x: 220,
+            y: 580 - (15 * 15),
+            size: 10,
+            font: font,
+            color: rgb(0.5, 0.5, 0.5),
+          });
+        }
+
+        // 하단 정보
+        page.drawText("This QR code was generated automatically.", {
+          x: 50,
+          y: 100,
+          size: 10,
+          font: font,
+          color: rgb(0.6, 0.6, 0.6),
+        });
+
+        console.log('PDF 내용 작성 완료, 저장 시작');
+
+        // PDF 저장
+        const pdfBytes = await pdfDoc.save();
+        console.log('PDF 바이너리 생성 완료');
+        
+        currentPdfBlob = new Blob([pdfBytes], { type: "application/pdf" });
+
+        // 자동 다운로드
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(currentPdfBlob);
+        link.download = `qrcode_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.pdf`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        // 다운로드 버튼 활성화
+        document.getElementById('downloadBtn').classList.remove('hidden');
+
+        // 숨겨진 div 제거
+        if (document.body.contains(hiddenDiv)) {
+          document.body.removeChild(hiddenDiv);
+        }
+
+        console.log('PDF 생성 및 다운로드 완료');
+        showStatus('✅ QR 코드 PDF가 성공적으로 생성되어 다운로드되었습니다!');
+
+      } catch (error) {
+        console.error('PDF 생성 오류:', error);
+        console.error('오류 스택:', error.stack);
+        showStatus(`❌ PDF 생성 중 오류가 발생했습니다: ${error.message}`, 'error');
+        
+        // 숨겨진 div 정리
+        const hiddenDiv = document.getElementById('hiddenQR');
+        if (hiddenDiv && document.body.contains(hiddenDiv)) {
+          document.body.removeChild(hiddenDiv);
+        }
+      }
+    }
+
+    function downloadPDF() {
+      if (currentPdfBlob) {
+        const link = document.createElement("a");
+        link.href = URL.createObjectURL(currentPdfBlob);
+        const now = new Date();
+        link.download = `qrcode_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2,'0')}${now.getDate().toString().padStart(2,'0')}_${now.getHours().toString().padStart(2,'0')}${now.getMinutes().toString().padStart(2,'0')}.pdf`;
+        link.click();
+        showStatus('📥 PDF가 다시 다운로드되었습니다!');
+      } else {
+        showStatus('❌ 다운로드할 PDF가 없습니다. 먼저 생성해주세요.', 'error');
+      }
+    }
+
+    // 페이지 로드시 예제 데이터 로드
+    window.addEventListener('load', () => {
+      console.log('🚀 QR 코드 PDF 생성기가 준비되었습니다!');
+    });
+  </script>
+</body>
+</html>

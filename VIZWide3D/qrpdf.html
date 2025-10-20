@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>PDF에 QR 코드 삽입 예제</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+  <style>
+    body {
+      font-family: sans-serif;
+      text-align: center;
+      padding: 20px;
+    }
+    #qrcode {
+      margin: 20px auto;
+    }
+    input {
+      width: 250px;
+      padding: 8px;
+      font-size: 16px;
+    }
+    button {
+      margin: 10px;
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <h2>📄 PDF에 QR 코드 삽입 예제</h2>
+  <input type="text" id="textInput" placeholder="QR 코드에 넣을 텍스트 입력">
+  <button onclick="generateQRCode()">QR 코드 생성</button>
+  <div id="qrcode"></div>
+  <button onclick="downloadPDF()">📥 PDF 다운로드</button>
+
+  <script>
+    let qrCodeInstance = null;
+
+    function generateQRCode() {
+      const text = document.getElementById("textInput").value || "https://example.com";
+
+      // 기존 QR 초기화
+      document.getElementById("qrcode").innerHTML = "";
+
+      // QR 생성
+      qrCodeInstance = new QRCode(document.getElementById("qrcode"), {
+        text: text,
+        width: 200,
+        height: 200,
+      });
+    }
+
+    async function downloadPDF() {
+      if (!qrCodeInstance) {
+        alert("먼저 QR 코드를 생성하세요!");
+        return;
+      }
+
+      const qrCanvas = document.querySelector("#qrcode canvas");
+      const qrDataUrl = qrCanvas.toDataURL("image/png");
+
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF();
+
+      doc.setFontSize(18);
+      doc.text("QR 코드 PDF 예제", 20, 20);
+
+      // QR 코드 이미지 삽입 (x, y, width, height)
+      doc.addImage(qrDataUrl, "PNG", 20, 40, 100, 100);
+
+      // PDF 다운로드
+      doc.save("qrcode.pdf");
+    }
+  </script>
+</body>
+</html>

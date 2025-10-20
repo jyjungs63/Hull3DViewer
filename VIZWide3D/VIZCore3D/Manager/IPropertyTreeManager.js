@@ -1,0 +1,1 @@
+class PropertyTree{constructor(a,b){let c=this;this['Main']=a,this['Show']=function(d){c['Main']['PropertyTree']['Show'](d);};}}export default PropertyTree;

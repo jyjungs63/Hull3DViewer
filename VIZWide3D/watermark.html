@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <title>QR 코드 구매 확정</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://unpkg.com/html5-qrcode" type="text/javascript"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/bootstrap/4.6.1/css/bootstrap.min.css" />
+  <style>
+    body {
+      text-align: center;
+      font-family: sans-serif;
+      margin: 0;
+      padding: 10px;
+      background-color: #f8f9fa;
+    }
+
+    h3 {
+      margin-top: 20px;
+    }
+
+    #reader {
+      width: 100%;
+      max-width: 400px;
+      margin: 0 auto;
+      border: 2px solid #ddd;
+      border-radius: 10px;
+      overflow: hidden;
+    }
+
+    #result {
+      margin-top: 15px;
+      font-size: 1.1em;
+      color: green;
+      word-break: break-word;
+      padding: 5px;
+    }
+
+    select {
+      margin: 15px auto;
+      padding: 12px;
+      font-size: 1.2em;
+      width: 100%;
+      max-width: 400px;
+      border-radius: 8px;
+      border: 2px solid #888;
+      background: #f9f9f9;
+      height: 50px;
+    }
+
+    select:focus {
+      outline: none;
+      border-color: #555;
+    }
+
+    #confirmBtn {
+      display: none;
+    }
+
+    /* 프린트 전용 워터마크 */
+    .print-only {
+      display: none;
+    }
+
+    @media print {
+      body * {
+        display: none !important;
+      }
+
+      .print-only {
+        display: block !important;
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
+        font-size: 12px;
+        color: #999;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <h3>📷 QR 코드 스캔</h3>
+  <select id="cameraSelect"></select>
+  <div id="reader"></div>
+  <button id="confirmBtn" class="btn btn-primary mt-3" disabled>확정</button>
+  <div id="result">QR 코드 결과가 여기에 표시됩니다.</div>
+
+  <!-- 프린트 전용 워터마크 -->
+  <div class="print-only">ⓒ Jinyoung Corp - 프린트 전용 워터마크</div>
+
+  <script>
+    let html5QrCode;
+    let currentCameraId;
+
+    function onScanSuccess(decodedText) {
+      document.getElementById('result').innerText = `✅ 인식된 QR 코드: ${decodedText}`;
+      const confirmBtn = document.getElementById('confirmBtn');
+      confirmBtn.style.display = 'inline-block';
+      confirmBtn.disabled = false;
+      confirmBtn.onclick = function () {
+        confirmOrder(decodedText);
+      };
+    }
+
+    function confirmOrder(porId) {
+      if (porId) {
+        alert("배송 처리 완료!!");
+        // 여기에 실제 배송 처리 로직을 추가하세요
+        console.log("처리된 ID:", porId);
+      }
+    }
+
+    function onScanFailure(error) {
+      console.warn(`QR 인식 실패: ${error}`);
+    }
+
+    function startScanner(cameraId) {
+      const qrBoxSize = Math.min(window.innerWidth * 0.8, 300);
+      if (html5QrCode) {
+        html5QrCode.stop().then(() => {
+          html5QrCode.clear();
+          html5QrCode.start(cameraId, { fps: 10, qrbox: qrBoxSize }, onScanSuccess, onScanFailure);
+        });
+      } else {
+        html5QrCode = new Html5Qrcode("reader");
+        html5QrCode.start(cameraId, { fps: 10, qrbox: qrBoxSize }, onScanSuccess, onScanFailure);
+      }
+    }
+
+    Html5Qrcode.getCameras().then(cameras => {
+      const select = document.getElementById("cameraSelect");
+      cameras.forEach(camera => {
+        const option = document.createElement("option");
+        option.value = camera.id;
+        option.text = camera.label || `카메라 ${camera.id}`;
+        select.appendChild(option);
+      });
+
+      currentCameraId = cameras[1] ? cameras[1].id : cameras[0].id;
+      select.value = currentCameraId;
+      startScanner(currentCameraId);
+
+      select.addEventListener("change", (e) => {
+        currentCameraId = e.target.value;
+        startScanner(currentCameraId);
+      });
+    }).catch(err => {
+      alert("카메라를 찾을 수 없습니다.");
+      console.error(err);
+    });
+
+    window.addEventListener("resize", () => {
+      if (currentCameraId) {
+        startScanner(currentCameraId);
+      }
+    });
+  </script>
+
+</body>
+</html>

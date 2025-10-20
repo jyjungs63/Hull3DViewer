@@ -1,0 +1,1 @@
+class Configuration{constructor(a){let b=this;this['AUTHORITY_PARAMS']={'Data':'http://127.0.0.1:8901'},this['Default']={'Path':'./'};}}export default Configuration;

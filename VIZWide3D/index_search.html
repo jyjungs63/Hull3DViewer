@@ -1,0 +1,150 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+
+    <!-- 예제 UI css -->
+    <link rel="stylesheet" href="./Resource/css/UISideBar.css">
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+        import UISideBar from "./Resource/js/UISideBar.js";
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        //파일 로딩 완료 시점 확인
+        let onModelLoadingCompleted = (e, loadType) => {
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE) {
+                console.log("onLoad Structure :: ", e);
+                //구조정보 로딩 완료
+            }
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH) {
+                console.log("onLoad Mesh :: ", e);
+                //모델정보 로딩 완료
+
+                alert("개발자도구(F12)의 콘솔(Console)탭을 통해 관련 예제 결과를 확인해주세요.");
+            }
+
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.HEADER) {
+                console.log("onLoad Header :: ", e);
+                //모델 로딩완료
+            }
+        };
+
+        let onConfiguration = () => {
+            //초기 환경설정 변경
+            //vizcore.Main.Configuration.Default.Path = "../";
+            //WebAssembly 경로 설정
+            //vizcore.Configuration.Default.WebAssembly.Path = "../";
+        };
+
+        let onBefore = () => {
+        };
+
+        let onInit = () => {
+            //ContextMenu 사용
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            vizcore.Model.OpenHeader("VIZCore3D/Model/sample/model_wh.vizw", "Sample", onModelLoadingCompleted);
+            //vizcore.Model.OpenHeader("VIZCore3D/Model/A101/A101_wh.vizw", "Sample", onModelLoadingCompleted);
+
+            //예제 테스트 리본 탭 생성
+            createExample();
+        };
+
+        let createExample = () => {
+            let example = new UISideBar(vizcore);
+
+            example.Init();
+
+            example.AddTitle("검색 기능 예제")
+
+            example.AddButton("노드 검색", cbFindNode);
+            example.AddButton("검색어 일치", cbFindNodeKeywordMatch);
+            example.AddButton("속성 포함", cbIncludeProperty);
+        };
+
+        /* Search Callback Function*/
+        //노드 검색
+        let cbFindNode = () => {
+            let keyword = 'OBJECT_6153';
+
+            let nodes = vizcore.Object3D.Find.QuickSearch(
+                keyword     //Keyword
+                , false     //Full Match
+            );
+
+            if (nodes !== undefined) {
+                console.log("========== 노드 검색 ===========")
+                for (let i = 0; i < nodes.length; i++) {
+                    console.log("Keyword : %s , Node Name :", keyword, nodes[i].name);
+                }
+            }
+
+            alert("'OBJECT_6153' 노드를 검색합니다.");
+        };
+
+        //검색어 일치
+        let cbFindNodeKeywordMatch = () => {
+            let keyword = 'OBJECT_6153';
+
+            //노드 이름에 해당하는 노드 반환
+            let nodes = vizcore.Object3D.Find.QuickSearch(
+                keyword     //Keyword
+                , true      //Full Match
+            );
+
+            if (nodes !== undefined) {
+                console.log("==========검색어 일치 ===========")
+                for (let i = 0; i < nodes.length; i++) {
+                    console.log("Keyword : %s , Node Name :", keyword, nodes[i].name);
+                }
+            }
+
+            alert("'OBJECT_6153'와 완전히 일치하는 노드를 검색합니다.");
+        };
+
+        //속성 포함
+        let cbIncludeProperty = () => {
+            let propertyValue = '/612RA1001-B';
+            let uda_nodeIds = vizcore.Object3D.UDA.GetNodeIDsByValue(propertyValue, true);
+
+            if (uda_nodeIds !== undefined) {
+                console.log("========== 속성 포함 ===========")
+                for (let i = 0; i < uda_nodeIds.length; i++) {
+                    console.log("Property Value : %s, Node ID : ", propertyValue, uda_nodeIds[i]);
+                }
+            }
+
+            alert("/612RA1001-B의 속성 정보를 포함하는 노드ID를 검색합니다.");
+        };
+
+        let option = {
+            event: {
+                onInit: onInit,
+                onBefore: onBefore,
+                onConfiguration: onConfiguration,
+            }
+        };
+
+        vizcore.Init(option);
+    </script>
+</head>
+
+<body>
+    <div class="VIZWeb_Main">
+        <div id="view"></div>
+    </div>
+</body>
+
+</html>

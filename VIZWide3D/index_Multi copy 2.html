@@ -1,0 +1,219 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+    
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+    <style>
+        .VIZWeb_Container {
+        position: relative;
+        width: 80%;
+        height: 80vh; /* 또는 원하는 높이 */
+        margin: 0 auto;
+        top: 50%;
+        /* transform: translateY(-50%); */
+        }
+
+        .VIZWeb_Main,
+        .VIZWeb_Main_Multi,
+        .VIZWeb_Main_Third,
+        .VIZWeb_Main_Fourth {
+        position: absolute;
+        width: 50%;
+        height: 50%;
+        border: 2px solid #0000; /* 시각적 확인용 */
+        }
+
+        .VIZWeb_Main {
+        top: 0%;
+        left: 0%;
+        }
+
+        .VIZWeb_Main_Multi {
+        top: 0%;
+        left: 50%;
+        }
+
+        .VIZWeb_Main_Third {
+        top: 50%;
+        left: 0%;
+        }
+
+        .VIZWeb_Main_Fourth {
+        top: 50%;
+        left: 50%;
+        }
+    </style>
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        //console.log("import - call");
+
+        let onSelectEvent = function (event) {
+            // 선택된 모델이 없음
+            if (event.data.id == -1) {
+                //console.log('선택된 모델이 없거나, 기존 선택상태가 해제됨.');
+            }
+            // 선택된 모델이 있음
+            else {
+                //console.log(event.data.id);
+            }
+        };
+
+        // 파일 로딩 완료 시점 확인
+        let onModelLoadingCompleted = function (e, loadType) {
+            console.log("Loading Completed :: ", e);
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE){
+                console.log("onLoad Structure :: ", e);
+                // 구조정보 로딩 완료
+            }
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH){
+                console.log("onLoad Mesh :: ", e);
+                // 모델정보 로딩 완료
+            }           
+        };
+
+        let onConfiguration =()=>{
+            // 초기 환경설정 변경
+            // VIZCore 경로 설정
+            vizcore.Configuration.Default.Path = "./VIZCore3D/";
+            // WebAssembly 경로 설정
+            vizcore.Configuration.Default.WebAssembly.Path = "./VIZCore3D/lib/shdcore/shdcore.wasm";
+            // Toolbar 설정
+            vizcore.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+
+        let onBefore =()=>{
+        };
+
+        let onInit = ()=>{
+            // ContextMenu 사용
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            vizcore.Model.OnStreamProgressChangedEvent(function(e){
+                //console.log("Total : ",  e.data.total, "Current : ", e.data.current, "Percentage : ", e.data.percentage);
+            });
+
+            // Add Event Handler : Object Selected Event (모델 선택 이벤트)
+            vizcore.Object3D.OnObject3DSelected(onSelectEvent);
+
+            // View Info 확인
+            let OnViewDrawInfo = function (event) {
+                //console.log(event.data); 
+            }
+            vizcore.View.OnViewDrawInfoEvent(OnViewDrawInfo);
+
+            // 파일 열기
+            vizcore.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample", onModelLoadingCompleted);
+        };
+
+        let option = {
+                event : {
+                    onInit : onInit,
+                    onBefore : onBefore,
+                    onConfiguration : onConfiguration,
+                }
+            }
+
+        vizcore.Init(option);
+
+        // multi view
+        let view2 = document.getElementById("view2");
+        view2.className = "VIZCore";
+        let vizcore2 = new VIZ3DCore(view2);
+
+        let view3 = document.getElementById("view3");
+        view3.className = "VIZCore";
+        let vizcore3 = new VIZ3DCore(view3);
+
+        let view4 = document.getElementById("view4");
+        view4.className = "VIZCore";
+        let vizcore4 = new VIZ3DCore(view4);
+
+        let onConfigurationMulti =()=>{
+            // Toolbar 설정
+            //vizcore2.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+        let onConfigurationMulti2 =()=>{
+            // Toolbar 설정
+            vizcore3.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+        let onConfigurationMulti3 =()=>{
+            // Toolbar 설정
+            vizcore4.Configuration.Type = VIZCore.Enum.UI_TYPE.TOOLBAR;
+        };
+
+        let optionInitMulti = ()=>{
+            // 파일 열기
+            vizcore2.Model.OpenHeader("VIZCore3D/Model/A101/A101_wh.vizw", "Sample");
+        };
+
+        let optionInitMulti2 = ()=>{
+            // 파일 열기
+            vizcore3.Model.OpenHeader("VIZCore3D/Model/A102/A102_wh.vizw", "Sample");
+        };
+        let optionInitMulti3 = ()=>{
+            // 파일 열기
+            vizcore4.Model.OpenHeader("VIZCore3D/Model/toycar/vizw/toycar_wh.vizw", "Sample");
+        };
+
+
+        let optionMulti = {
+                event : {
+                    onInit : optionInitMulti,
+                    onConfiguration : onConfigurationMulti,
+                }
+            }
+        
+        let optionMulti2 = {
+                event : {
+                    onInit : optionInitMulti2,
+                    onConfiguration : onConfigurationMulti2,
+                }
+            }
+        let optionMulti3 = {
+                event : {
+                    onInit : optionInitMulti3,
+                    onConfiguration : onConfigurationMulti3,
+                }
+            }
+
+        vizcore2.Init(optionMulti);
+        vizcore3.Init(optionMulti2);
+        vizcore4.Init(optionMulti3);
+        
+    </script>
+</head>
+<body>
+<div class="VIZWeb_Container">
+  <div class="VIZWeb_Main"><div id="view"></div></div>
+  <div class="VIZWeb_Main_Multi"><div id="view2"></div></div>
+  <div class="VIZWeb_Main_Third"><div id="view3"></div></div>
+  <div class="VIZWeb_Main_Fourth"><div id="view4"></div></div>
+</div>
+
+
+
+    <!-- <div class="VIZWeb_Main">
+        <div id="view"></div>
+    </div>
+    <div class="VIZWeb_Main_Multi">
+        <div id="view2"></div>
+    </div>
+    <div class="VIZWeb_Main_Third">
+        <div id="view3"></div>
+    </div>
+    <div class="VIZWeb_Main_Fourth">
+        <div id="view4"></div>
+    </div> -->
+</body>
+</html>

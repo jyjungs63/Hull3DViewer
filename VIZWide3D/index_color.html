@@ -1,0 +1,192 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+
+    <!-- 예제 UI css -->
+    <link rel="stylesheet" href="./Resource/css/UISideBar.css">
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+        import UISideBar from "./Resource/js/UISideBar.js";
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        let selection;
+
+        //파일 로딩 완료 시점 확인
+        let onModelLoadingCompleted = (e, loadType) => {
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE) {
+                console.log("onLoad Structure :: ", e);
+                //구조정보 로딩 완료
+            }
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH) {
+                console.log("onLoad Mesh :: ", e);
+                //모델정보 로딩 완료
+            }
+
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.HEADER) {
+                console.log("onLoad Header :: ", e);
+                //모델 로딩완료
+            }
+        };
+
+        let onConfiguration = () => {
+            //초기 환경설정 변경
+            //vizcore.Main.Configuration.Default.Path = "../";
+            //WebAssembly 경로 설정
+            //vizcore.Configuration.Default.WebAssembly.Path = "../";
+        };
+
+        let onBefore = () => {
+        };
+
+        let onInit = () => {
+            //ContextMenu 사용
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            vizcore.Model.OpenHeader("VIZCore3D/Model/A101/A101_wh.vizw", "Sample", onModelLoadingCompleted);
+
+            //예제 테스트 리본 탭 생성
+            createExample();
+        };
+
+        let createExample = () => {
+            let example = new UISideBar(vizcore);
+
+            example.Init();
+
+            example.AddTitle("색상 예제");
+
+            example.AddButton("노드 색상 변경", cbSetColor);
+            example.AddButton("노드 색상 초기화 ", cbClearColor);
+            example.AddButton("노드 투명도 변경", cbSetAlpha);
+            example.AddButton("노트 투명도 초기화", cbClearAlpha);
+            example.AddButton("전체 초기화", cbClearAll);
+        };
+
+        /* Color Callback Function*/
+        //노드 색상 변경
+        let cbSetColor = () => {
+            //랜덤값
+            const getRandom = (min, max) => Math.random() * (max - min) + min;
+
+            let Keyword = "toycar_axle_assy";
+            let nodes = vizcore.Object3D.Find.GetNodeByName(
+                Keyword,  //Keyword
+                true      //Full Match
+            );
+
+            let nodeIds = [];
+            for (let i = 0; i < nodes.length; i++) {
+                nodeIds.push(nodes[i].id)
+            }
+
+            let bodyIds = vizcore.Object3D.GetBodyIdsByNodeID(nodeIds); //Array
+
+            //색상 변경 
+            vizcore.Object3D.Color.SetColorByBodyID(bodyIds, new VIZCore.Color(getRandom(0, 255), getRandom(0, 255), getRandom(0, 255), 255));
+
+            //[To Do] 화면 다시그리기 호출 
+            vizcore.Render();
+        };
+
+        //노드 투명도 변경
+        let cbSetAlpha = () => {
+            let Keyword = "toycar_body";
+            let nodes = vizcore.Object3D.Find.GetNodeByName(
+                Keyword,  //Keyword
+                true      //Full Match
+            );
+
+            let nodeIds = [];
+            for (let i = 0; i < nodes.length; i++) {
+                nodeIds.push(nodes[i].id);
+            }
+
+            let bodyIds = vizcore.Object3D.GetBodyIdsByNodeID(nodeIds); //Array
+
+            //투명도 변경
+            let alpha = 100;
+            vizcore.Object3D.Color.SetAlpha(bodyIds, alpha);
+
+            //[To Do] 화면 다시그리기 호출
+            vizcore.Render();
+        };
+
+        //노드 색상 초기화
+        let cbClearColor = () => {
+            let Keyword = "toycar_axle";
+            let nodes = vizcore.Object3D.Find.GetNodeByName(
+                Keyword,  //Keyword
+                false     //Full Match
+            );
+
+            let nodeIds = [];
+            for (let i = 0; i < nodes.length; i++) {
+                nodeIds.push(nodes[i].id)
+            }
+
+            let bodyIds = vizcore.Object3D.GetBodyIdsByNodeID(nodeIds); //Array
+            //색상 초기화
+            vizcore.Object3D.Color.ClearByBodyID(bodyIds);
+
+            //[To Do] 화면 다시그리기 호출
+            vizcore.Render();
+        };
+
+        //노드 투명도 초기화
+        let cbClearAlpha = () => {
+            let Keyword = "toycar_body";
+            let nodes = vizcore.Object3D.Find.GetNodeByName(
+                Keyword,  //Keyword
+                true      //Full Match
+            );
+
+            let nodeIds = [];
+            for (let i = 0; i < nodes.length; i++) {
+                nodeIds.push(nodes[i].id);
+            }
+
+            let bodyIds = vizcore.Object3D.GetBodyIdsByNodeID(nodeIds); //Array
+            //색상 초기화
+            vizcore.Object3D.Color.ClearAlpha(bodyIds);
+
+            //[To Do] 화면 다시그리기 호출
+            vizcore.Render();
+        };
+
+        //색상 전체 초기화 
+        let cbClearAll = () => {
+            vizcore.Object3D.Color.ClearAll();
+        };
+
+        let option = {
+            event: {
+                onInit: onInit,
+                onBefore: onBefore,
+                onConfiguration: onConfiguration,
+            }
+        };
+
+        vizcore.Init(option);
+    </script>
+</head>
+
+<body>
+    <div class="VIZWeb_Main">
+        <div id="view"></div>
+    </div>
+</body>
+
+</html>

@@ -1,0 +1,188 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport"
+        content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+
+    <!-- 예제 UI css -->
+    <link rel="stylesheet" href="./Resource/css/UISideBar.css">
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+        import UISideBar from "./Resource/js/UISideBar.js";
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        //모델트리 개발자 정보 On/Off 변수
+        let OnOff = true;
+        let modelTreeOpen = false;
+        let modelOpen;
+
+        let onSelectEvent = (event) => {
+            //선택된 모델이 없음
+            if (event.data.id == -1) {
+                //alert('선택된 모델이 없거나, 기존 선택상태가 해제됨.');
+            }
+            //선택된 모델이 있음
+            else {
+                //console.log(event.data.id);
+            }
+        };
+
+        //파일 로딩 완료 시점 확인
+        let cbModelLoadingCompleted = (e, loadType) => {
+            console.log("Loading Completed :: ", e);
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE) {
+                console.log("onLoad Structure :: ", e);
+                //구조정보 로딩 완료
+            }
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH) {
+                console.log("onLoad Mesh :: ", e);
+                //모델정보 로딩 완료
+            }
+
+            if (loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.HEADER) {
+                console.log("onLoad Header :: ", e);
+                //모델 로딩완료
+            }
+        };
+
+        let onConfiguration = () => {
+            //초기 환경설정 변경
+            //vizcore.Main.Configuration.Default.Path = "../";
+            //WebAssembly 경로 설정
+            //vizcore.Configuration.Default.WebAssembly.Path = "../";
+        };
+
+        let onBefore = () => {
+        };
+
+        let onInit = () => {
+            //ContextMenu 사용
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            //Add Event Handler : Object Selected Event (모델 선택 이벤트)
+            vizcore.Object3D.OnObject3DSelected(onSelectEvent);
+
+            //예제 테스트 리본 탭 생성
+            createExample();
+        };
+
+        let createExample = () => {
+            let example = new UISideBar(vizcore);
+
+            example.Init();
+
+            example.AddTitle("모델 파일 예제");
+
+            example.AddButton("파일 열기", cbOpenFile);
+            example.AddButton("파일 닫기", cbClose);
+            example.AddButton("파일 추가", cbAddFiles);
+            example.AddButton("바운드 박스 반환", cbReturnBox);
+            example.AddButton("파일 목록 반환", cbReturnFile);
+            example.AddButton("모델트리 개발자 정보 On/Off", cbDevelopInfo);
+        };
+
+        /* File Callback Function*/
+        //파일 열기
+        let cbOpenFile = () => {
+            vizcore.Model.OpenHeader("VIZCore3D/Model/toycar/vizw/toycar_wh.vizw", "Sample", cbModelLoadingCompleted);
+            alert("모델 파일을 엽니다.(OpenHeader)");
+        };
+
+        //모델 닫기
+        let cbClose = () => {
+            vizcore.Model.Close();
+            alert("모델 파일을 닫습니다.(Close)");
+        };
+
+        //파일 추가
+        let cbAddFiles = () => {
+            let models = [];
+
+            //models.push("VIZCore3D/Model/toycar/vizw/toycar_wh.vizw");
+            models.push("VIZCore3D/Model/A101/A101_wh.vizw");
+            vizcore.Model.AddHeader(models);
+            alert("모델 파일을 추가합니다.(AddHeader)");
+        };
+
+        //바운드 박스 반환
+        let cbReturnBox = () => {
+            let files = vizcore.Model.GetOpenFiles();
+            if (files.length === 0) {
+                alert("파일 목록을 반환하려면 '파일 열기' 나 '파일 추가'를 해주세요.");
+            } else {
+                let bbox;
+                bbox = vizcore.Model.GetBoundBox();
+                console.log("바운드 박스 반환: ", bbox);
+                alert("바운드 박스 반환 정보를 확인하려면 개발자도구(F12)에서 콘솔(Console)을 확인해 주세요.");
+            }
+
+        };
+
+        //파일 목록 반환
+        let cbReturnFile = () => {
+            let files = vizcore.Model.GetOpenFiles();
+            if (files.length === 0) {
+                alert("파일 목록을 반환하려면 '파일 열기' 나 '파일 추가'를 해주세요.");
+            } else {
+                console.log("파일 목록 반환: ", files);
+                alert("반환된 파일 목록을 확인하려면 개발자도구(F12)에서 콘솔(Console)을 확인해 주세요.");
+            }
+        }
+
+        //모델트리 개발자 정보 사용여부 (ID 표시)
+        let cbDevelopInfo = () => {
+            modelOpen = vizcore.Model.GetOpenFiles();
+            if (modelOpen.length == 0) {
+                alert("개발자 정보 사용여부를 표시하려면 '파일 열기' 나 '파일 추가'를 해주세요.");
+            } else {
+                if (!modelTreeOpen) {
+                    vizcore.ModelTree.Developer(OnOff);
+                    OnOff = !OnOff;
+
+                    //모델트리 개발자 정보 확인을 위해 ModelTreeTab클릭
+                    document.getElementById('ModelTreeTab').click();
+
+                    modelTreeOpen = true;
+                } else {
+
+                    vizcore.ModelTree.Developer(OnOff);
+                    OnOff = !OnOff;
+
+                    //모델트리 개발자 정보 변경 확인을 위해 ModelTreeTab 더블클릭
+                    document.getElementById('ModelTreeTab').click();
+                    document.getElementById('ModelTreeTab').click();
+                }
+            }
+            vizcore.Render();
+        }
+
+        let option = {
+            event: {
+                onInit: onInit,
+                onBefore: onBefore,
+                onConfiguration: onConfiguration,
+            }
+        };
+
+        vizcore.Init(option);
+    </script>
+</head>
+
+<body>
+    <div class="VIZWeb_Main">
+        <div id="view"></div>
+    </div>
+</body>
+
+</html>

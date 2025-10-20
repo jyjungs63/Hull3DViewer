@@ -1,0 +1,1 @@
+class GeometryUtility{constructor(a,b){let c=this;this['Main']=a,this['ShowOsnap']=function(d,e,f,g){c['Main']['Mode']['ShowOsnap'](d,0x0,e,f,g);},this['ShowOsnapByOnlyModel']=function(d,e,f,g){c['Main']['Mode']['ShowOsnap'](d,0x1,e,f,g);},this['ShowOsnapByOnlyShapeDrawing']=function(d,e,f,g){c['Main']['Mode']['ShowOsnap'](d,0x2,e,f,g);};}}export default GeometryUtility;

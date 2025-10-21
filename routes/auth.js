@@ -192,4 +192,31 @@ router.get('/me', async (req, res) => {
   }
 });
 
+// 트리 구조로 변환하는 함수
+function buildTree(data, parentId = null) {
+  return data
+    .filter(item => item.parent_id === parentId)
+    .map(item => ({
+      id: item.id,
+      text: item.text,
+      children: buildTree(data, item.id)
+    }));
+}
+
+
+router.post('/getBlockTree', async (req, res) => {
+  try {
+    const { block } = req.body;
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT id, parent_id, text FROM tree_nodes WHERE block = ?', [block]);
+    conn.release();
+
+    const tree = buildTree(rows[0]);
+    res.json(tree);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
+
 module.exports = router;

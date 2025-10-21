@@ -518,10 +518,62 @@ window.search도면번호 = function() {
   logToConsole(`도면번호 검색: ${value}`, "info");
 };
 
+async function selectBlock() {
+  const block = document.getElementById("idBlock").value;
+  logToConsole(`블럭 선택: ${block}`, "info");
+
+  const res = await fetch('http://localhost:4000/api/auth/getBlockTree', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json'
+    },
+    body: JSON.stringify({ block })
+  });
+
+  const data = await res.json();
+
+  // 기존 트리 제거
+  $('#jstree').jstree('destroy');
+
+  // 새 트리 생성
+  $('#jstree')
+    .jstree({
+      core: { data: data },
+      plugins: ['checkbox', 'state']
+    })
+    .on('ready.jstree', function () {
+      $(this).jstree('open_all');
+    })
+    .on('select_node.jstree', async function (e, selected) {
+      const node = selected.node;
+      logToConsole(`노드 선택: ${node.text}`, "warning");
+
+      // 선택 시 다시 트리 로딩
+      // const res = await fetch('http://localhost:4000/api/auth/getBlockTree', {
+      //   method: 'POST',
+      //   headers: {
+      //     'Content-Type': 'application/json'
+      //   },
+      //   body: JSON.stringify({ block: node.text }) // 또는 다른 기준
+      // });
+
+      // const newData = await res.json();
+      // $('#jstree').jstree('destroy');
+      // $('#jstree').jstree({
+      //   core: { data: newData },
+      //   plugins: ['checkbox', 'state']
+      // }).on('ready.jstree', function () {
+      //   $(this).jstree('open_all');
+      // });
+    });
+
+  console.log(data);
+}
+
 // 초기화 함수
 function init() {
   // 리사이저 초기화
-  initResizers();
+  //selectBlock();
 
   // 윈도우 리사이즈 이벤트
   window.addEventListener("resize", () => {
@@ -541,32 +593,39 @@ function init() {
   displayGLBTable("view2", 4);
   logToConsole("Images 초기화 완료", "success");
 
+
+
   // jsTree 초기화 - treeData가 3dData.js에서 로드되었는지 확인
   $(function () {
-    if (typeof treeData !== "undefined") {
-      $("#jstree")
-        .jstree({
-          core: {
-            data: treeData,
-          },
-          plugins: ["state"],
-        })
-        .on("ready.jstree", function () {
-          $(this).jstree("open_all");
-        })
-        .on("select_node.jstree", function (e, data) {
-          const node = data.node;
-          logToConsole(`노드 선택: ${node.text}`, "warning");
-        });
-    } else {
-      console.error("treeData is not defined. Please check 3dData.js");
-    }
+    registerUser();
+  //   if (typeof treeData !== "undefined") {
+  //     $("#jstree")
+  //       .jstree({
+  //         core: {
+  //           data: treeData,
+  //         },
+  //         plugins: ["state"],
+  //         plugins: ['checkbox'],
+  //       })
+  //       .on("ready.jstree", function () {
+  //         $(this).jstree("open_all");
+  //       })
+  //       .on("select_node.jstree", function (e, data) {
+  //         const node = data.node;
+  //         logToConsole(`노드 선택: ${node.text}`, "warning");
+  //       });
+  //   } else {
+  //     console.error("treeData is not defined. Please check 3dData.js");
+  //   }
   });
 }
 
 // DOMContentLoaded 이벤트에서 초기화
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
+  registerUser();
 } else {
   init();
 }
+
+window.selectBlock = selectBlock;

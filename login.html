@@ -311,10 +311,10 @@
     <div class="container">
         <div class="left-panel">
             <div class="cad-icon">📐</div>
-            <h1>CAD Design System</h1>
-            <p>전문적인 선체 3D 설계 및 생산도면 관리 시스템</p>
+            <h1>선체 3D 블록정보 정보</h1>
+            <p>선체 3D 블록 설계 및 생산도면 관리 시스템</p>
             <div class="feature-list">
-                <div class="feature-item">3D 모델링 및 시각화</div>
+                <div class="feature-item">3D 시각화</div>
                 <div class="feature-item">실시간 협업 기능</div>
                 <div class="feature-item">도면 버전 관리</div>
                 <div class="feature-item">프로젝트 관리 도구</div>
@@ -547,7 +547,7 @@
                 createdAt: new Date().toISOString()
             };
 
-            const res = await fetch('http://localhost:4000/register', {
+            const res = await fetch('http://localhost:4000/api/auth/register', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
@@ -560,7 +560,13 @@
             console.log(data);
             // 2초 후 로그인 폼으로 이동
             setTimeout(() => {
-                showLoginForm();
+                if ( data.message == "회원가입이 완료되었습니다.") {
+                    //console.log('회원가입이 완료되었습니다.:', data.user.name);
+                    showLoginForm();
+                } else {
+                    showAlert('loginAlert', '회원가입이 실패했습니다.', 'error');
+                }
+                
                 // 이메일 자동 입력
                 document.getElementById('loginEmail').value = email;
             }, 2000);

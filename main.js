@@ -5,8 +5,8 @@ import { DRACOLoader } from "three/examples/jsm/loaders/DRACOLoader.js";
 
 const models = {
   view1: "mipoTest/F201.glb",
-  view2: "mipoTest/E21P_BLOCK.glb",
-  view3: "mipoTest/E22P_BLOCK.glb",
+  view2: "mipoTest/A113.glb",
+  view3: "mipoTest/A102.glb",
 };
 
 // 3D 뷰 인스턴스를 저장할 객체
@@ -99,6 +99,11 @@ function initResize(e) {
   const iframes = document.querySelectorAll('iframe');
   iframes.forEach(iframe => {
     iframe.style.pointerEvents = 'none';
+  });
+
+  const embs = document.querySelectorAll('embed');
+  embs.forEach(emb => {
+    emb.style.pointerEvents = 'none';
   });
 
   const resizeType = currentResizer.dataset.resize;
@@ -548,27 +553,62 @@ async function selectBlock() {
       'items': function (node) {
         const tree = $('#jstree').jstree(true);
         const items = {
+          depItem: {
+            label: "📑 DAP 도면",
+            // icon: "🔍", 
+            action: function () {
+              displayGLBTable("view2", 4);
+            }
+          },       
+          
           renameItem: {
             label: "🔍 도면 검색",
-            icon: "🔍", // Font Awesome 아이콘
-
+            // icon: "🔍", 
             action: function () {
               // tree.edit(node);
-              window.open('1.pdf', '_blank');
+              const container = document.getElementById('view2');
+              container.innerHTML = `<embed src="1.pdf" type="application/pdf" width="100%" height="100%">`;
+              // window.open('1.pdf', '_blank');
             }
           },
           deleteItem: {
             label: "🗑️ 삭제",
-            icon: "🗑️", // Font Awesome 아이콘
+            // icon: "🗑️", 
+            "separator_before": true,
+            "_disabled": (node.id === '1'), // Root node는 비활성화
             action: function () {
               tree.delete_node(node);
             }
           },
           propertyItem: {
             label: "⚙️ 속성보기",
-            icon: "⚙️",
+            // icon: "⚙️",
             action: function () {
-              tree.delete_node(node);
+              const nodeData = tree.get_node(node);
+              const modal = document.getElementById("propertyModal");
+              const content = document.getElementById("propertyContent");
+              const closeBtn = modal.querySelector(".close");
+
+              // 노드 정보 표시
+              content.innerHTML = `
+                <iframe src="property-tabs.html" style="width: 100%; height: 100%; border: none;"  id="rightIframe" > </iframe>
+              `;
+
+              // 모달 열기
+              modal.style.display = "block";
+
+              // 닫기 버튼 이벤트
+              closeBtn.onclick = function () {
+                modal.style.display = "none";
+              };
+
+              // 바깥 클릭 시 닫기
+              window.onclick = function (event) {
+                if (event.target === modal) {
+                  modal.style.display = "none";
+                }
+              };
+
             }
           }
         };
@@ -666,7 +706,7 @@ function init() {
 // DOMContentLoaded 이벤트에서 초기화
 if (document.readyState === "loading") {
   document.addEventListener("DOMContentLoaded", init);
-  registerUser();
+  //registerUser();
 } else {
   init();
 }

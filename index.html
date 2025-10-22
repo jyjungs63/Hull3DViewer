@@ -79,21 +79,21 @@
                 <div style="margin-bottom: 10px">
                   <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면번호</label>
                   <div style="display: flex; gap: 5px">
-                    <input type="text" id="도면번호" placeholder="" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
+                    <input type="text" id="도면번호" placeholder="DWG-2024-001" style="flex: 1; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px; min-width: 0;" />
                     <button type="button" onclick="search도면번호()" style="padding: 8px 12px; background: white; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; flex-shrink: 0;">🔍</button>
                   </div>
                 </div>
 
                 <!-- 도면명 -->
                 <div style="margin-bottom: 10px">
-                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;">도면명</label>
-                  <input type="text" id="도면명" placeholder="" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
+                  <label style="display: block; font-weight: bold; margin-bottom: 5px; font-size: 12px;" >도면명</label>
+                  <input type="text" id="도면명" placeholder="선체조립도" style="width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; font-size: 13px;" />
                 </div>
               </form>
             </div>
-
+          <div style="height: 5px; width: 100%; background-color: #f0f0f0; border-top: 1px solid #ccc;"></div>
             <!-- jsTree (남은 공간 모두 차지) -->
-            <div id="jstree" style="flex: 1; overflow: auto; padding: 0px" ></div>
+            <div id="jstree" style="flex: 1; overflow: auto; padding: 0px; margin-top: 10px;" ></div>
           </div>
           <div class="resizer resizer-h-thin" data-resize="left"></div>
         </div>
@@ -140,6 +140,15 @@
         </div>
       </div>
     </div>
+    <!-- 모달 팝업 -->
+    <div id="propertyModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3> ⚙️ 속성 보기</h3>
+        <div id="propertyContent">여기에 속성 정보가 표시됩니다.</div>
+      </div>
+    </div>
+
     
     <script type="module" src="main.js"></script>
   </body>

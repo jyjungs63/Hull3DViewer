@@ -358,3 +358,38 @@
     width: auto !important;
     z-index: 9999 !important;
   }
+
+.modal {
+  display: none; 
+  position: fixed;
+  z-index: 9999;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow-y: hidden;
+  background-color: rgba(0,0,0,0.4);
+}
+.modal-content {
+  background-color: #fff;
+  margin: 15% auto;
+  padding: 20px;
+  width: 600px;
+  height: 500px;
+  border-radius: 8px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+    overflow-y: hidden;
+}
+.close {
+  float: right;
+  font-size: 24px;
+  cursor: pointer;
+}
+#propertyContent {
+  margin-top: 20px;
+  font-size: 14px;
+    height: 400px;
+  line-height: 1.6;
+  max-height: 500px;
+  overflow-y: auto;
+}

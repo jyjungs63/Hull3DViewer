@@ -324,8 +324,7 @@
         color: #1dd1a1;
       }
       .menubar {
-        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-        color: white;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);        color: white;
         padding: 12px 20px;
         display: flex;
         align-items: center;
@@ -354,3 +353,8 @@
     #jstree .jstree-container-ul > .jstree-node {
         margin-left: 0 !important;
     }
+
+  .jstree-contextmenu {
+    width: auto !important;
+    z-index: 9999 !important;
+  }

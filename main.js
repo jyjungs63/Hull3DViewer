@@ -539,7 +539,49 @@ async function selectBlock() {
   $('#jstree')
     .jstree({
       core: { data: data },
-      plugins: ['checkbox', 'state']
+      plugins: ['checkbox', 'state', 'contextmenu' ,'types'],
+      types: {
+        'document': { 'icon': '📄' },
+        'folder': { 'icon': '📁' }
+      },
+      'contextmenu': {
+      'items': function (node) {
+        const tree = $('#jstree').jstree(true);
+        const items = {
+          renameItem: {
+            label: "🔍 도면 검색",
+            icon: "🔍", // Font Awesome 아이콘
+
+            action: function () {
+              // tree.edit(node);
+              window.open('1.pdf', '_blank');
+            }
+          },
+          deleteItem: {
+            label: "🗑️ 삭제",
+            icon: "🗑️", // Font Awesome 아이콘
+            action: function () {
+              tree.delete_node(node);
+            }
+          },
+          propertyItem: {
+            label: "⚙️ 속성보기",
+            icon: "⚙️",
+            action: function () {
+              tree.delete_node(node);
+            }
+          }
+        };
+
+        // 폴더는 삭제 금지
+        if (node.type === 'folder') {
+          delete items.deleteItem;
+        }
+
+        return items;
+      }
+    }
+
     })
     .on('ready.jstree', function () {
       $(this).jstree('open_all');
@@ -574,6 +616,7 @@ async function selectBlock() {
 function init() {
   // 리사이저 초기화
   //selectBlock();
+  initResizers();
 
   // 윈도우 리사이즈 이벤트
   window.addEventListener("resize", () => {

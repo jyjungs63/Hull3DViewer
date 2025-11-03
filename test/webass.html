@@ -1,0 +1,242 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>WASM 샘플 — WAT를 브라우저에서 컴파일하여 실행</title>
+  <style>
+    body{font-family:system-ui,-apple-system,Segoe UI,Roboto,'Noto Sans KR',sans-serif;margin:24px;color:#111}
+    pre{background:#f6f7f9;border:1px solid #e3e6ea;padding:12px;border-radius:8px;overflow:auto;font-size:0.9rem}
+    label{display:block;margin-top:12px}
+    .row{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+    button{padding:8px 12px;border-radius:8px;border:1px solid #cfd6dc;background:white;cursor:pointer}
+    button:hover{background:#f0f0f0}
+    input[type=number],input[type=text]{width:120px;padding:6px;border:1px solid #cfd6dc;border-radius:6px}
+    input[type=text]{width:220px}
+    .log{margin-top:12px;background:#fff8e6;border:1px solid #f2d398;padding:10px;border-radius:6px;font-family:monospace}
+    .res{font-weight:bold;color:#d73a49}
+  </style>
+</head>
+<body>
+  <h1>WebAssembly 실습 샘플 (브라우저에서 WAT → wasm 컴파일)</h1>
+  <p>아래 WAT 코드를 자유롭게 수정하고 <em>Compile &amp; Instantiate</em> 버튼을 눌러 보세요.</p>
+
+  <h2>WAT 코드 (편집 가능)</h2>
+  <pre id="watSource" contenteditable="true">(module
+  ;; 1 페이지(64KiB) 메모리, JS와 공유
+  (memory (export "memory") 1)
+
+  ;; ---------- 간단한 덧셈 ----------
+  (func (export "add") (param i32 i32) (result i32)
+    local.get 0
+    local.get 1
+    i32.add)
+
+  ;; ---------- 반복 피보나치 ----------
+  (func (export "fib") (param $n i32) (result i32)
+    (local $i i32) (local $a i32) (local $b i32)
+    local.get $n
+    i32.const 0
+    i32.eq
+    if (result i32) i32.const 0 return end
+
+    local.get $n
+    i32.const 1
+    i32.eq
+    if (result i32) i32.const 1 return end
+
+    (local.set $a (i32.const 0))
+    (local.set $b (i32.const 1))
+    (local.set $i (i32.const 2))
+
+    (loop $loop
+      (local.set $i (i32.sub (local.get $i) (i32.const 1)))
+      (br_if $loop (i32.gt_s (local.get $i) (i32.const 0)))
+
+      (local.set $a (i32.add (local.get $a) (local.get $b)))
+      (local.set $b (i32.sub (local.get $b) (local.get $a)))   ;; swap
+      (local.set $b (i32.add (local.get $a) (local.get $b)))   ;; next
+    )
+    local.get $b)
+
+  ;; ---------- 재귀 팩토리얼 ----------
+  (func $fact (param $n i32) (result i32)
+    local.get $n
+    i32.const 1
+    i32.le_s
+    if (result i32) i32.const 1 return end
+
+    local.get $n
+    (call $fact (i32.sub (local.get $n) (i32.const 1)))
+    i32.mul)
+  (func (export "fact") (param i32) (result i32)
+    (call $fact (local.get 0)))
+
+  ;; ---------- 메모리 동적 할당 (간단한 bump allocator) ----------
+  (global $nextPtr (mut i32) (i32.const 0))   ;; 현재 할당 포인터
+
+  (func (export "alloc") (param $size i32) (result i32)
+    (local $ptr i32)
+    (local.set $ptr (global.get $nextPtr))
+    (global.set $nextPtr (i32.add (local.get $ptr) (local.get $size)))
+    local.get $ptr)
+
+  ;; ---------- 문자열 길이 ----------
+  (func (export "strlen") (param $ptr i32) (result i32)
+    (local $p i32)
+    local.get $ptr
+    local.set $p
+    (loop $loop
+      (i32.load8_u (local.get $p))
+      i32.eqz
+      if
+        (return (i32.sub (local.get $p) (local.get $ptr)))
+      end
+      (local.set $p (i32.add (local.get $p) (i32.const 1)))
+      br $loop)
+    i32.const 0)
+)
+</pre>
+
+  <div style="margin-top:12px">
+    <button id="compileBtn">Compile &amp; Instantiate</button>
+    <button id="resetBtn">Reset WAT (초기값)</button>
+  </div>
+
+  <h2>함수 실행</h2>
+
+  <label>add(a, b):</label>
+  <div class="row">
+    <input id="addA" type="number" value="3" />
+    <span>+</span>
+    <input id="addB" type="number" value="5" />
+    <button id="runAdd">실행</button>
+    <span id="addRes" class="res"></span>
+  </div>
+
+  <label>fib(n):</label>
+  <div class="row">
+    <input id="fibN" type="number" value="10" />
+    <button id="runFib">실행</button>
+    <span id="fibRes" class="res"></span>
+  </div>
+
+  <label>fact(n):</label>
+  <div class="row">
+    <input id="factN" type="number" value="6" />
+    <button id="runFact">실행</button>
+    <span id="factRes" class="res"></span>
+  </div>
+
+  <label>메모리-문자열 예제 (JS → WASM → JS)</label>
+  <div class="row">
+    <input id="strInput" type="text" value="Hello WASM" />
+    <button id="writeStr">메모리에 쓰고 strlen 호출</button>
+    <span id="strRes" class="res"></span>
+  </div>
+
+  <div class="log" id="log">로깅: 준비됨</div>
+
+ <head>
+  ...
+  <!-- wabt.js 로컬 로드 (인터넷 없이도 작동) -->
+<script type="module">
+  import wabt from 'https://cdn.jsdelivr.net/npm/wabt@1.0.33/dist/wabt.mjs';
+  // 이후 wabt() 사용
+</script>
+<script>
+// wabt.js는 이미 <script src="wabt.js">로 로드됨
+(async function(){
+  const log = (t)=>{ document.getElementById('log').textContent = '로깅: '+t; };
+  log('wabt 초기화 중...');
+
+  // wabt가 전역에 로드될 때까지 대기
+  if (typeof wabt === 'undefined') {
+    log('wabt.js 로드 실패: 전역 wabt 객체 없음');
+    return;
+  }
+
+  try {
+    const wabtModule = await wabt();  // wabt는 Promise를 반환
+    log('wabt 로드 완료');
+    const wabt = wabtModule;
+
+    let wasmInst = null;
+
+    async function compile(wat){
+      log('컴파일 중...');
+      const mod = wabt.parseWat('inline.wat', wat);
+
+      const {buffer} = mod.toBinary({log: false});
+      mod.destroy();
+      log(`wasm 생성 (${buffer.byteLength} bytes)`);
+
+      const {instance} = await WebAssembly.instantiate(buffer, {});
+      log('인스턴스화 완료');
+      return instance;
+    }
+
+    document.getElementById('compileBtn').onclick = async ()=>{
+      const wat = document.getElementById('watSource').innerText;
+      try{
+        wasmInst = await compile(wat);
+        window.wasmInst = wasmInst;
+        log('모듈 준비됨 – 함수 호출 가능');
+      }catch(e){
+        log('컴파일 실패: '+e.message);
+        console.error(e);
+      }
+    };
+
+    document.getElementById('resetBtn').onclick = ()=>location.reload();
+
+    const needInst = ()=>{ if(!wasmInst){ alert('먼저 Compile & Instantiate 하세요'); return false; } return true; };
+
+    document.getElementById('runAdd').onclick = ()=>{
+      if(!needInst()) return;
+      const a = +document.getElementById('addA').value;
+      const b = +document.getElementById('addB').value;
+      const r = wasmInst.exports.add(a,b);
+      document.getElementById('addRes').textContent = `= ${r}`;
+    };
+
+    document.getElementById('runFib').onclick = ()=>{
+      if(!needInst()) return;
+      const n = +document.getElementById('fibN').value;
+      const r = wasmInst.exports.fib(n);
+      document.getElementById('fibRes').textContent = `= ${r}`;
+    };
+
+    document.getElementById('runFact').onclick = ()=>{
+      if(!needInst()) return;
+      const n = +document.getElementById('factN').value;
+      const r = wasmInst.exports.fact(n);
+      document.getElementById('factRes').textContent = `= ${r}`;
+    };
+
+    document.getElementById('writeStr').onclick = ()=>{
+      if(!needInst()) return;
+      const mem = wasmInst.exports.memory;
+      const encoder = new TextEncoder();
+      const txt = document.getElementById('strInput').value + '\0';
+      const bytes = encoder.encode(txt);
+
+      const ptr = wasmInst.exports.alloc(bytes.byteLength);
+      const u8 = new Uint8Array(mem.buffer);
+      u8.set(bytes, ptr);
+
+      const len = wasmInst.exports.strlen(ptr);
+      document.getElementById('strRes').textContent = `strlen = ${len}`;
+    };
+
+    log('준비 완료 – WAT 수정 후 Compile 버튼을 눌러보세요.');
+
+  } catch(e) {
+    log('wabt 초기화 실패: '+e);
+    console.error(e);
+  }
+})();
+</script>
+</head>
+</body>
+</html>

@@ -12,7 +12,7 @@ const { sendResetEmail } = require('../utils/mailer');
 dotenv.config();
 const JWT_SECRET = process.env.JWT_SECRET || 'changeme';
 const COOKIE_NAME = process.env.COOKIE_NAME || 'token';
-const FRONTEND_URL = process.env.FRONTEND_URL || 'http://localhost:3000';
+const FRONTEND_URL = process.env.FRONTEND_URL || 'http://192.168.10.12:3000';
 
 // helper: create JWT
 function createToken(payload) {

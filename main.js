@@ -287,8 +287,27 @@ function initThreeView(viewId, modelPath) {
   const container = document.getElementById(viewId);
   container.innerHTML = "";
 
+  const canvas = document.createElement('canvas');
+  canvas.width = 256;
+  canvas.height = 256;
+  const ctx = canvas.getContext('2d');
+
+  // 그라디언트 생성
+  const gradient = ctx.createLinearGradient(0, 0, 0, canvas.height);
+  gradient.addColorStop(0, '#e0f7fa'); // 상단 색상
+  gradient.addColorStop(1, '#cac3c6ff'); // 하단 색상
+
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // 텍스처로 설정
+  const texture = new THREE.CanvasTexture(canvas);
+
+
   const scene = new THREE.Scene();
-  scene.background = new THREE.Color(0xf0f0f0);
+   //scene.background = new THREE.Color(0xf0f0f0);
+  scene.background = texture;
+
 
   const camera = new THREE.PerspectiveCamera(
     45,

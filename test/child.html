@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html>
+<head><title>Child</title></head>
+<body>
+  <div id="childContent">안녕하세요, 부모님!</div>
+
+  <script>
+    const dom = document.getElementById("childContent");
+    // 부모의 함수 호출 (동일 출처일 때만 가능)
+    window.parent.receiveChildData(dom);
+  </script>
+</body>
+</html>

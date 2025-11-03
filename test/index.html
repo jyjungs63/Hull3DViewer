@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+<html>
+<head><title>Parent</title></head>
+<body>
+  <iframe id="myFrame" src="child.html"></iframe>
+
+  <script>
+    function receiveChildData(domElement) {
+      console.log("자식 iframe에서 받은 DOM:", domElement);
+      // 예: 텍스트 출력
+      alert("자식의 텍스트: " + domElement.textContent);
+    }
+  </script>
+</body>
+</html>

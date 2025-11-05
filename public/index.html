@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Windows 인증 로그인 테스트</title>
+<style>
+  body { font-family: system-ui, -apple-system, "나눔고딕", "Noto Sans KR", Arial; padding: 18px; line-height:1.5; }
+  button { padding: 8px 12px; border-radius:6px; border:1px solid #ccc; background:#f6f6f6; cursor:pointer; }
+  pre { background:#111; color:#eee; padding:12px; border-radius:6px; max-width:100%; overflow:auto; }
+  .meta { margin-bottom:12px; color:#666; font-size:0.95rem; }
+  .warn { color:#a33; font-weight:600; }
+  .ok { color:#177; font-weight:600; }
+</style>
+</head>
+<body>
+  <h2>Windows 인증 (IWA) 로그인 확인</h2>
+
+  <div class="meta">
+    <div>⚠️ <span class="warn">로컬 파일로 열면 작동하지 않습니다.</span> 웹서버(예: IIS / Node)에서 제공되어야 합니다.</div>
+    <div>💡 브라우저 설정: Chrome/Edge는 Intranet zone에서 "자동으로 Windows 자격증명 전송"이 허용되어야 합니다.</div>
+  </div>
+
+  <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+    <button id="btnLogin">로그인 확인</button>
+    <button id="btnAuto">자동 검사 켜기</button>
+    <span id="status" class="meta"></span>
+  </div>
+
+  <pre id="result">결과가 여기에 표시됩니다.</pre>
+
+<script>
+const resultEl = document.getElementById('result');
+const statusEl = document.getElementById('status');
+const btn = document.getElementById('btnLogin');
+const btnAuto = document.getElementById('btnAuto');
+
+let autoInterval = null;
+
+function setStatus(text, ok) {
+  statusEl.textContent = text;
+  statusEl.className = ok ? 'meta ok' : 'meta warn';
+}
+
+async function checkLogin() {
+  setStatus('요청 중…', true);
+  resultEl.textContent = '';
+
+  // 경로는 서버측 엔드포인트에 맞게 수정하세요
+  const url = '/api/login';
+
+  try {
+    const res = await fetch(url, {
+      method: 'GET',
+      credentials: 'include', // 중요: IWA 토큰 전송을 위해 필요
+      // mode: 'same-origin' // cross-origin이라면 서버와 CORS/credentials 설정 필요
+    });
+
+    let bodyText = await res.text();
+    let parsed = null;
+    try { parsed = JSON.parse(bodyText); } catch (e){ /* not json */ }
+
+    if (res.ok) {
+      setStatus(`인증됨 (HTTP ${res.status})`, true);
+      if (parsed) {
+        // user 필드가 "DOMAIN\\username" 형태라 가정하고 분리
+        const userRaw = parsed.user || parsed.username || '';
+        let domain = '', username = userRaw;
+        if (typeof userRaw === 'string' && userRaw.includes('\\')) {
+          [domain, username] = userRaw.split('\\');
+        }
+        const out = {
+          httpStatus: res.status,
+          userRaw,
+          domain,
+          username,
+          groups: parsed.groups || parsed.userGroups || null,
+          fullResponse: parsed
+        };
+        resultEl.textContent = JSON.stringify(out, null, 2);
+      } else {
+        // non-json body
+        resultEl.textContent = `서버 응답(비-JSON):\n\n${bodyText}`;
+      }
+    } else if (res.status === 401) {
+      setStatus(`인증되지 않음 (HTTP 401)`, false);
+      resultEl.textContent = parsed ? JSON.stringify(parsed, null, 2) : bodyText;
+    } else {
+      setStatus(`오류 (HTTP ${res.status})`, false);
+      resultEl.textContent = parsed ? JSON.stringify(parsed, null, 2) : bodyText;
+    }
+  } catch (err) {
+    setStatus('요청 실패', false);
+    resultEl.textContent = `네트워크 오류 또는 CORS/브라우저 설정 문제:\n\n${err.toString()}\n\n참고: IWA는 대개 Intranet(사내) 환경에서만 동작합니다.`;
+  }
+}
+
+// 버튼 이벤트
+btn.addEventListener('click', checkLogin);
+
+// 자동 검사 토글 (예: 30초 간격)
+btnAuto.addEventListener('click', () => {
+  if (!autoInterval) {
+    autoInterval = setInterval(checkLogin, 30000);
+    btnAuto.textContent = '자동 검사 끄기';
+    setStatus('자동 검사 활성화 (30s)', true);
+    checkLogin();
+  } else {
+    clearInterval(autoInterval);
+    autoInterval = null;
+    btnAuto.textContent = '자동 검사 켜기';
+    setStatus('자동 검사 비활성화', true);
+  }
+});
+
+// 페이지 로드 시(옵션): 자동 1회 호출
+window.addEventListener('load', () => {
+  if (location.protocol === 'file:') {
+    setStatus('파일 프로토콜로 열림 — 서버에서 제공해야 작동합니다.', false);
+    resultEl.textContent = '이 파일을 웹서버(IIS/Node 등)로 서빙한 뒤 접근하세요.';
+    return;
+  }
+  // 자동 1회 체크 (원하지 않으면 주석 처리)
+  checkLogin();
+});
+</script>
+</body>
+</html>

@@ -44,7 +44,7 @@
             vizcore.Object3D.SelectByNodeName
             //노드 이름에 해당하는 노드 반환
             let nodes = vizcore.Object3D.Find.GetNodeByName(
-                '/F201_DK3'   // Keyword
+                '/F201_DK2_01'   // Keyword
                 , true      // Full Match
             );
             let nodes2 = vizcore.Object3D.Find.GetNodeByName(
@@ -52,7 +52,7 @@
                 , true      // Full Match
             );
             //노드 색상 변경
-            vizcore.Object3D.ShowAll(false);
+            // vizcore.Object3D.ShowAll(false);
             vizcore.Object3D.ShowByNode(nodes, true);
             vizcore.Object3D.ShowByNode(nodes2, true);
             vizcore.Object3D.Color.SetColorByNode(nodes, new VIZCore.Color(255, 125, 0, 255));

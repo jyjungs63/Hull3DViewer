@@ -546,7 +546,7 @@ async function selectBlock() {
   const block = document.getElementById("idBlock").value;
   logToConsole(`블럭 선택: ${block}`, "info");
 
-  const res = await fetch('http://localhost:4000/api/auth/getBlockTree', {
+  const res = await fetch('http://192.168.10.12:4000/api/auth/getBlockTree', {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json'

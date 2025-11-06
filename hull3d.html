@@ -1,0 +1,1283 @@
+﻿<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml">
+<head>
+    <meta charset="utf-8" />
+    <title>VIZWebCore :: SOFTHILLS</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0, maximum-scale=1.0,user-scalable=no" />
+    <script src="VIZCore3D/lib/jquery/jquery-3.2.1.js"></script>
+        <!-- jsTree CSS -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/themes/default/style.min.css" />
+    <!-- jsTree JS -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.12/jstree.min.js"></script>
+    
+    <link rel="stylesheet" href="VIZCore3D/Resource/css/VIZCore.css">
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100vh;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+        }
+
+        /* 메인 레이아웃 컨테이너 */
+        .main-layout {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            height: 100vh;
+        }
+
+        /* 상단 메뉴바 */
+        .menu-bar {
+            height: 40px;
+            background-color: #2c3e50;
+            color: white;
+            display: flex;
+            align-items: center;
+            padding: 0 15px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            z-index: 1000;
+        }
+
+        .menu-bar .menu-item {
+            padding: 8px 15px;
+            cursor: pointer;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+
+        .menu-bar .menu-item:hover {
+            background-color: #34495e;
+        }
+
+        /* 중간 컨텐츠 영역 */
+        .content-wrapper {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 왼쪽 Tree View Panel */
+        .left-panel {
+            width: 250px;
+            background-color: #ecf0f1;
+            border-right: 1px solid #bdc3c7;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 검색 폼 영역 */
+        .search-panel {
+            height: 200px;
+            background-color: #ecf0f1;
+            border-bottom: 1px solid #bdc3c7;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        .search-panel-header {
+            background-color: #34495e;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .search-form {
+            padding: 15px;
+        }
+
+        .form-group {
+            margin-bottom: 12px;
+        }
+
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-size: 12px;
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select {
+            width: 100%;
+            padding: 6px 8px;
+            border: 1px solid #bdc3c7;
+            border-radius: 3px;
+            font-size: 12px;
+            background-color: white;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .search-button {
+            width: 100%;
+            padding: 8px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 3px;
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: bold;
+        }
+
+        .search-button:hover {
+            background-color: #2980b9;
+        }
+
+        /* 검색 패널과 트리 패널 사이의 구분선 */
+        .search-tree-divider {
+            position: absolute;
+            width: 100%;
+            height: 5px;
+            left: 0;
+            bottom: 0;
+            cursor: row-resize;
+            background-color: transparent;
+            z-index: 100;
+        }
+
+        .search-tree-divider:hover {
+            background-color: #4a90e2;
+            opacity: 0.5;
+        }
+
+        /* 모델 트리 영역 */
+        .tree-panel {
+            flex: 1;
+            background-color: #ecf0f1;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .tree-panel-header {
+            background-color: #34495e;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        .tree-view {
+            padding: 10px;
+        }
+
+        .tree-item {
+            padding: 5px 10px;
+            cursor: pointer;
+            user-select: none;
+            font-size: 13px;
+        }
+
+        .tree-item:hover {
+            background-color: #d5dbdb;
+        }
+
+        .tree-item.selected {
+            background-color: #3498db;
+            color: white;
+        }
+
+        /* 중앙 3D 뷰 컨테이너 */
+        .center-panel {
+            flex: 1;
+            position: relative;
+            background-color: #2c3e50;
+        }
+
+        .VIZWeb_Container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        .VIZWeb_Main,
+        .VIZWeb_Main_Multi,
+        .VIZWeb_Main_Third,
+        .VIZWeb_Main_Fourth {
+            position: absolute;
+            border: 1px solid #34495e;
+            overflow: hidden;
+            background-color: #1a252f;
+        }
+
+        .VIZWeb_Main {
+            top: 0;
+            left: 0;
+            width: 50%;
+            height: 50%;
+        }
+
+        .VIZWeb_Main_Multi {
+            top: 0;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+        }
+
+        .VIZWeb_Main_Third {
+            top: 50%;
+            left: 0;
+            width: 50%;
+            height: 50%;
+        }
+
+        .VIZWeb_Main_Fourth {
+            top: 50%;
+            left: 50%;
+            width: 50%;
+            height: 50%;
+        }
+
+        /* 우측 Property Panel */
+        .right-panel {
+            width: 300px;
+            background-color: #ecf0f1;
+            border-left: 1px solid #bdc3c7;
+            overflow-y: auto;
+            position: relative;
+        }
+
+        .right-panel-header {
+            background-color: #34495e;
+            color: white;
+            padding: 10px;
+            font-weight: bold;
+        }
+
+        .property-group {
+            padding: 10px;
+            border-bottom: 1px solid #bdc3c7;
+        }
+
+        .property-group h3 {
+            margin: 0 0 10px 0;
+            font-size: 14px;
+            color: #2c3e50;
+        }
+
+        .property-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 5px 0;
+            font-size: 13px;
+        }
+
+        .property-label {
+            color: #7f8c8d;
+        }
+
+        .property-value {
+            color: #2c3e50;
+            font-weight: 500;
+        }
+
+        /* 하단 Console Panel */
+        .bottom-panel {
+            height: 150px;
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            border-top: 1px solid #333;
+            overflow-y: auto;
+            position: relative;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+        }
+
+        .console-header {
+            background-color: #252526;
+            color: #cccccc;
+            padding: 8px 10px;
+            font-weight: bold;
+            border-bottom: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .console-content {
+            padding: 10px;
+        }
+
+        .console-log {
+            padding: 3px 0;
+            border-bottom: 1px solid #2d2d2d;
+        }
+
+        .console-log.info {
+            color: #4fc3f7;
+        }
+
+        .console-log.warning {
+            color: #ffb74d;
+        }
+
+        .console-log.error {
+            color: #e57373;
+        }
+
+        .console-clear-btn {
+            padding: 3px 10px;
+            background-color: #3c3c3c;
+            border: 1px solid #555;
+            color: #cccccc;
+            cursor: pointer;
+            border-radius: 3px;
+            font-size: 11px;
+        }
+
+        .console-clear-btn:hover {
+            background-color: #4a4a4a;
+        }
+
+        /* Resize Dividers */
+        .vertical-divider {
+            position: absolute;
+            width: 8px;
+            height: 100%;
+            left: 50%;
+            top: 0;
+            margin-left: -4px;
+            background-color: #4a90e2;
+            cursor: col-resize;
+            z-index: 1000;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .vertical-divider:hover,
+        .vertical-divider.dragging {
+            opacity: 0.8;
+        }
+
+        .horizontal-divider {
+            position: absolute;
+            width: 100%;
+            height: 8px;
+            left: 0;
+            top: 50%;
+            margin-top: -4px;
+            background-color: #4a90e2;
+            cursor: row-resize;
+            z-index: 1000;
+            opacity: 0.3;
+            transition: opacity 0.2s;
+        }
+
+        .horizontal-divider:hover,
+        .horizontal-divider.dragging {
+            opacity: 0.8;
+        }
+
+        /* Panel Resize Dividers */
+        .left-resize-handle {
+            position: absolute;
+            width: 5px;
+            height: 100%;
+            right: 0;
+            top: 0;
+            cursor: col-resize;
+            background-color: transparent;
+            z-index: 100;
+        }
+
+        .left-resize-handle:hover {
+            background-color: #4a90e2;
+            opacity: 0.5;
+        }
+
+        .right-resize-handle {
+            position: absolute;
+            width: 5px;
+            height: 100%;
+            left: 0;
+            top: 0;
+            cursor: col-resize;
+            background-color: transparent;
+            z-index: 100;
+        }
+
+        .right-resize-handle:hover {
+            background-color: #4a90e2;
+            opacity: 0.5;
+        }
+
+        .bottom-resize-handle {
+            position: absolute;
+            width: 100%;
+            height: 5px;
+            left: 0;
+            top: 0;
+            cursor: row-resize;
+            background-color: transparent;
+            z-index: 100;
+        }
+
+        .bottom-resize-handle:hover {
+            background-color: #4a90e2;
+            opacity: 0.5;
+        }
+
+        .no-select {
+            user-select: none;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+        }
+        .modal {
+            display: none; 
+            position: fixed;
+            z-index: 9999;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow-y: hidden;
+            background-color: rgba(0,0,0,0.4);
+        }
+        .modal-content {
+            background-color: #fff;
+            margin: 15% auto;
+            padding: 20px;
+            width: 600px;
+            height: 500px;
+            border-radius: 8px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.3);
+            overflow-y: hidden;
+        }   
+        .close {
+            float: right;
+            font-size: 24px;
+            cursor: pointer;
+        }
+        #propertyContent {
+            margin-top: 20px;
+            font-size: 14px;
+            height: 400px;
+            line-height: 1.6;
+            max-height: 500px;
+            overflow-y: auto;
+        }     
+    </style>
+
+    <script type="module">
+        import VIZ3DCore from "./VIZCore3D/VIZCore.js";
+        import { VIZCore } from "./VIZCore3D/VIZCore.js";
+        let vizcore2, vizcore3, vizcore4;
+
+        let view = document.getElementById("view");
+        view.className = "VIZCore";
+        let vizcore = new VIZ3DCore(view);
+
+        let onSelectEvent = function (event) {
+            if (event.data.id == -1) {
+                addLog('선택된 모델이 없거나, 기존 선택상태가 해제됨.', 'info');
+            }
+            else {
+                addLog('모델 선택됨: ID=' + event.data.id, 'info');
+            }
+        };
+
+        let onModelLoadingCompleted0 = function (e, loadType) {
+            console.log("Loading Completed :: ", e);
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE){
+                console.log("onLoad Structure :: ", e);
+                addLog('구조정보 로딩 완료', 'info');
+            }
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH){
+                console.log("onLoad Mesh :: ", e);
+                addLog('모델정보 로딩 완료', 'info');
+            }  
+            let nodes = vizcore.Object3D.Find.GetNodeByName(
+                '/F201_DK2_01'   // Keyword
+                , true      // Full Match
+            );
+            vizcore.Object3D.Color.SetColorByNode(nodes, new VIZCore.Color(255, 125, 0, 255));   
+            let ids = [nodes];   //Array<Number>
+            //지정한 개체의 모델 모서리 설정
+            vizcore.Object3D.CustomEdge.SetEdge(ids, true);
+            //지정한 개체의 모델 모서리 표시
+            vizcore.View.ShowModelObjectCustomEdge(true);
+            //지정한 개체의 모델 모서리 추가 표시 색상 설정
+            let color = new VIZCore.Color(255,0,0,255);   //R, G, B, A
+            vizcore.View.SetModelObjectCustomEdgeColor(color);
+            //지정한 개체의 모델 모서리 두께 설정
+            let thickness = 1.0;    // 0.1 ~ 2.0
+            vizcore.View.SetModelObjectCustomEdgeThickness(thickness);
+        }
+
+        let onModelLoadingCompleted = function (e, loadType) {
+            console.log("Loading Completed :: ", e);
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE){
+                console.log("onLoad Structure :: ", e);
+                addLog('구조정보 로딩 완료', 'info');
+            }
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH){
+                console.log("onLoad Mesh :: ", e);
+                addLog('모델정보 로딩 완료', 'info');
+            }  
+            let nodes = vizcore3.Object3D.Find.GetNodeByName(
+                '/F201_DK2_01'   // Keyword
+                , true      // Full Match
+            );
+            let nodes2 = vizcore3.Object3D.Find.GetNodeByName(
+                '/F201_DK4_01'   // Keyword
+                , true      // Full Match
+            );
+            let n3 = vizcore3.Object3D.Find.GetNodeByName(
+                '/F201_BHDLP1_04'   // Keyword
+                , true      // Full Match
+            );            
+            let n4 = vizcore3.Object3D.Find.GetNodeByName(
+                '/F201_BHDLP1_04_R'   // Keyword
+                , true      // Full Match
+            );
+            
+            //노드 색상 변경
+            vizcore3.Object3D.ShowAll(false);
+            vizcore3.Object3D.ShowByNode(nodes, true);
+            vizcore3.Object3D.ShowByNode(n3, true);
+            vizcore3.Object3D.ShowByNode(n4, true);
+            // vizcore.Object3D.ShowByNode(nodes2, true);
+            vizcore3.Object3D.Color.SetColorByNode(n3, new VIZCore.Color(255, 125, 0, 255));   
+            vizcore3.Object3D.Color.SetColorByNode(n4, new VIZCore.Color(255, 125, 0, 255));   
+            // vizcore.UIElement.GetStatusbar.Show(true);
+            //Camera 설정 (+x +z)
+            //vizcore.View.ViewRightTopSide();
+            //Camera 설정 (+z)
+            //vizcore3.View.ViewTopPlan();
+            vizcore3.View.FitAll();
+        };
+        let onModelLoadingCompleted2 = function (e, loadType) {
+            console.log("Loading Completed :: ", e);
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE){
+                console.log("onLoad Structure :: ", e);
+                addLog('구조정보 로딩 완료', 'info');
+            }
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH){
+                console.log("onLoad Mesh :: ", e);
+                addLog('모델정보 로딩 완료', 'info');
+            }  
+            let nodes = vizcore2.Object3D.Find.GetNodeByName(
+                '/F201_BHDLP1_04'   // Keyword
+                , true      // Full Match
+            );            
+            let nodes2 = vizcore2.Object3D.Find.GetNodeByName(
+                '/F201_BHDLP1_04_R'   // Keyword
+                , true      // Full Match
+            );
+            //노드 색상 변경
+            vizcore2.Object3D.ShowAll(false);
+            vizcore2.Object3D.ShowByNode(nodes, true);
+            vizcore2.Object3D.ShowByNode(nodes2, true);
+            // vizcore2.Object3D.Color.SetColorByNode(nodes2, new VIZCore.Color(255, 125, 0, 255));    
+
+            vizcore2.View.FitAll();
+            //HiddenLine 모드 활성화 / 비활성화
+            vizcore2.View.EnableHiddenLine(true);
+        };
+
+        let onModelLoadingCompleted3 = function (e, loadType) {
+            console.log("Loading Completed :: ", e);
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.STRUCTURE){
+                console.log("onLoad Structure :: ", e);
+                addLog('구조정보 로딩 완료', 'info');
+            }
+            if(loadType === VIZCore.Enum.CONFIG_KEY.LOADER.COMPLETEDTIME.MESH){
+                console.log("onLoad Mesh :: ", e);
+                addLog('모델정보 로딩 완료', 'info');
+            }  
+
+            let nodes = vizcore4.Object3D.Find.GetNodeByName(
+                '/F201_DK2_01'   // Keyword
+                , true      // Full Match
+            );
+            vizcore4.Object3D.ShowAll(false);
+            vizcore4.Object3D.ShowByNode(nodes, true);
+            vizcore4.View.ViewTopPlan();
+            vizcore4.View.EnableHiddenLine(true);
+        };
+
+        let onConfiguration =()=>{
+            vizcore.Configuration.Default.Path = "./VIZCore3D/";
+            vizcore.Configuration.Default.WebAssembly.Path = "./VIZCore3D/lib/shdcore/shdcore.wasm";
+            vizcore.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+
+        let onBefore =()=>{
+        };
+
+        let onInit = ()=>{
+            let context = new vizcore.ContextMenu(view, vizcore, VIZCore);
+
+            vizcore.Model.OnStreamProgressChangedEvent(function(e){
+                //console.log("Total : ",  e.data.total, "Current : ", e.data.current, "Percentage : ", e.data.percentage);
+            });
+
+            vizcore.Object3D.OnObject3DSelected(onSelectEvent);
+
+            let OnViewDrawInfo = function (event) {
+                //console.log(event.data); 
+            }
+            vizcore.View.OnViewDrawInfoEvent(OnViewDrawInfo);
+
+            // vizcore.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample");
+            //vizcore.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample", onModelLoadingCompleted0);
+            addLog('VIZCore 초기화 완료 - View 1', 'info');
+        };
+
+        let option = {
+                event : {
+                    onInit : onInit,
+                    onBefore : onBefore,
+                    onConfiguration : onConfiguration,
+                }
+            }
+
+        vizcore.Init(option);
+
+        // multi view
+        let view2 = document.getElementById("view2");
+        view2.className = "VIZCore";
+        vizcore2 = new VIZ3DCore(view2);
+
+        let view3 = document.getElementById("view3");
+        view3.className = "VIZCore";
+         vizcore3 = new VIZ3DCore(view3);
+
+        let view4 = document.getElementById("view4");
+        view4.className = "VIZCore";
+         vizcore4 = new VIZ3DCore(view4);
+
+        let onConfigurationMulti =()=>{
+            //vizcore2.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+        let onConfigurationMulti2 =()=>{
+            vizcore3.Configuration.Type = VIZCore.Enum.UI_TYPE.NONE;
+        };
+        let onConfigurationMulti3 =()=>{
+            vizcore4.Configuration.Type = VIZCore.Enum.UI_TYPE.TOOLBAR;
+            //vizcore4.View.EnableHiddenLine(true);
+        };
+
+        let optionInitMulti = ()=>{
+            //vizcore2.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted);
+            addLog('VIZCore 초기화 완료 - View 2', 'info');
+        };
+
+        let optionInitMulti2 = ()=>{
+            //vizcore3.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted2);
+            addLog('VIZCore 초기화 완료 - View 3', 'info');
+        };
+        let optionInitMulti3 = ()=>{
+            //vizcore4.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted3);
+            addLog('VIZCore 초기화 완료 - View 4', 'info');
+        };
+
+        let optionMulti = {
+                event : {
+                    onInit : optionInitMulti,
+                    onConfiguration : onConfigurationMulti,
+                }
+            }
+        
+        let optionMulti2 = {
+                event : {
+                    onInit : optionInitMulti2,
+                    onConfiguration : onConfigurationMulti2,
+                }
+            }
+        let optionMulti3 = {
+                event : {
+                    onInit : optionInitMulti3,
+                    onConfiguration : onConfigurationMulti3,
+                }
+            }
+
+        vizcore2.Init(optionMulti);
+        vizcore3.Init(optionMulti2);
+        vizcore4.Init(optionMulti3);
+
+        let cbAdd2DNote = () => {
+            //노트 객체 생성
+            let note = vizcore4.Main.Data.ReviewItem();
+
+            //노트 타입 설정
+            //타입 구분
+            //RK_2D_NOTE -> 2D 노트 타입
+            //RK_3D_NOTE -> 3D 노트 타입
+            //RK_SURFACE_NOTE -> Suface 노트 타입
+            note.itemType = VIZCore.Enum.REVIEW_TYPES.RK_2D_NOTE;
+
+            let text = [];
+            text.push('2D Note #1');
+            text.push('2D Note #2');
+
+            //Note Style 정의
+            note.text.value = text;                                       //value
+            note.text.position = new VIZCore.Vector3(500, 100, 100);      //생성 위치
+
+            note.style.font.size = 13;
+            note.style.font.color.set(13, 65, 6, 255);                    //R, G, B, A
+            note.style.border.type = 1;                                   //0 (Rectangle), 1(Rounded Rectangle)
+            note.style.border.color.set(41, 143, 194, 255);               //R, G, B, A
+            note.style.background.color.set(255, 255, 255, 200);          //R, G, B, A
+
+            //Note 추가
+            let noteId = vizcore4.Review.Note.AddNote(note);
+
+            //화면 다시 그리기
+            vizcore4.Render();
+
+            //해당 Note 수정하기 위한 ID backup
+            change2DNoteId = noteId;
+        };
+
+        // Console 로그 추가 함수
+        function addLog(message, type = 'info') {
+            const consoleContent = document.querySelector('.console-content');
+            const timestamp = new Date().toLocaleTimeString();
+            const logEntry = document.createElement('div');
+            logEntry.className = 'console-log ' + type;
+            logEntry.textContent = `[${timestamp}] ${message}`;
+            consoleContent.appendChild(logEntry);
+            consoleContent.scrollTop = consoleContent.scrollHeight;
+        }
+
+        // Expose addLog to window for global access
+        window.addLog = addLog;
+
+        // Resize 기능 구현
+        $(document).ready(function() {
+            const container = $('.VIZWeb_Container');
+            const leftTop = $('.VIZWeb_Main');
+            const rightTop = $('.VIZWeb_Main_Multi');
+            const leftBottom = $('.VIZWeb_Main_Third');
+            const rightBottom = $('.VIZWeb_Main_Fourth');
+            const verticalDivider = $('.vertical-divider');
+            const horizontalDivider = $('.horizontal-divider');
+
+            let isDraggingVertical = false;
+            let isDraggingHorizontal = false;
+            let startX, startY;
+            let startLeftWidth, startTopHeight;
+
+            // 수직 divider 드래그 (3D 뷰 좌우 조절)
+            verticalDivider.on('mousedown', function(e) {
+                isDraggingVertical = true;
+                startX = e.pageX;
+                startLeftWidth = leftTop.width();
+                $(document.body).addClass('no-select');
+                verticalDivider.addClass('dragging');
+                e.preventDefault();
+            });
+
+            // 수평 divider 드래그 (3D 뷰 상하 조절)
+            horizontalDivider.on('mousedown', function(e) {
+                isDraggingHorizontal = true;
+                startY = e.pageY;
+                startTopHeight = leftTop.height();
+                $(document.body).addClass('no-select');
+                horizontalDivider.addClass('dragging');
+                e.preventDefault();
+            });
+
+            $(document).on('mousemove', function(e) {
+                if (isDraggingVertical) {
+                    const containerWidth = container.width();
+                    const deltaX = e.pageX - startX;
+                    let newLeftWidth = startLeftWidth + deltaX;
+                    
+                    const minWidth = containerWidth * 0.1;
+                    const maxWidth = containerWidth * 0.9;
+                    newLeftWidth = Math.max(minWidth, Math.min(maxWidth, newLeftWidth));
+                    
+                    const leftPercent = (newLeftWidth / containerWidth) * 100;
+                    const rightPercent = 100 - leftPercent;
+                    
+                    leftTop.css('width', leftPercent + '%');
+                    leftBottom.css('width', leftPercent + '%');
+                    rightTop.css({ 'left': leftPercent + '%', 'width': rightPercent + '%' });
+                    rightBottom.css({ 'left': leftPercent + '%', 'width': rightPercent + '%' });
+                    verticalDivider.css('left', leftPercent + '%');
+                    
+                    updateViews();
+                }
+                
+                if (isDraggingHorizontal) {
+                    const containerHeight = container.height();
+                    const deltaY = e.pageY - startY;
+                    let newTopHeight = startTopHeight + deltaY;
+                    
+                    const minHeight = containerHeight * 0.1;
+                    const maxHeight = containerHeight * 0.9;
+                    newTopHeight = Math.max(minHeight, Math.min(maxHeight, newTopHeight));
+                    
+                    const topPercent = (newTopHeight / containerHeight) * 100;
+                    const bottomPercent = 100 - topPercent;
+                    
+                    leftTop.css('height', topPercent + '%');
+                    rightTop.css('height', topPercent + '%');
+                    leftBottom.css({ 'top': topPercent + '%', 'height': bottomPercent + '%' });
+                    rightBottom.css({ 'top': topPercent + '%', 'height': bottomPercent + '%' });
+                    horizontalDivider.css('top', topPercent + '%');
+                    
+                    updateViews();
+                }
+            });
+
+            $(document).on('mouseup', function() {
+                if (isDraggingVertical || isDraggingHorizontal) {
+                    $(document.body).removeClass('no-select');
+                    verticalDivider.removeClass('dragging');
+                    horizontalDivider.removeClass('dragging');
+                    updateViews();
+                    isDraggingVertical = false;
+                    isDraggingHorizontal = false;
+                }
+            });
+
+            // Panel Resize 기능
+            let isResizingLeft = false;
+            let isResizingRight = false;
+            let isResizingBottom = false;
+            let isResizingSearchTree = false;
+            let startWidth, startHeight;
+
+            $('.left-resize-handle').on('mousedown', function(e) {
+                isResizingLeft = true;
+                startX = e.pageX;
+                startWidth = $('.left-panel').width();
+                $(document.body).addClass('no-select');
+                e.preventDefault();
+            });
+
+            $('.right-resize-handle').on('mousedown', function(e) {
+                isResizingRight = true;
+                startX = e.pageX;
+                startWidth = $('.right-panel').width();
+                $(document.body).addClass('no-select');
+                e.preventDefault();
+            });
+
+            $('.bottom-resize-handle').on('mousedown', function(e) {
+                isResizingBottom = true;
+                startY = e.pageY;
+                startHeight = $('.bottom-panel').height();
+                $(document.body).addClass('no-select');
+                e.preventDefault();
+            });
+
+            // 검색 패널과 트리 패널 사이의 divider
+            $('.search-tree-divider').on('mousedown', function(e) {
+                isResizingSearchTree = true;
+                startY = e.pageY;
+                startHeight = $('.search-panel').height();
+                $(document.body).addClass('no-select');
+                e.preventDefault();
+            });
+
+            $(document).on('mousemove', function(e) {
+                if (isResizingLeft) {
+                    const deltaX = e.pageX - startX;
+                    let newWidth = startWidth + deltaX;
+                    newWidth = Math.max(150, Math.min(500, newWidth));
+                    $('.left-panel').css('width', newWidth + 'px');
+                    updateViews();
+                }
+
+                if (isResizingRight) {
+                    const deltaX = startX - e.pageX;
+                    let newWidth = startWidth + deltaX;
+                    newWidth = Math.max(200, Math.min(600, newWidth));
+                    $('.right-panel').css('width', newWidth + 'px');
+                    updateViews();
+                }
+
+                if (isResizingBottom) {
+                    const deltaY = startY - e.pageY;
+                    let newHeight = startHeight + deltaY;
+                    newHeight = Math.max(100, Math.min(400, newHeight));
+                    $('.bottom-panel').css('height', newHeight + 'px');
+                    updateViews();
+                }
+
+                if (isResizingSearchTree) {
+                    const deltaY = e.pageY - startY;
+                    let newHeight = startHeight + deltaY;
+                    const leftPanelHeight = $('.left-panel').height();
+                    newHeight = Math.max(150, Math.min(leftPanelHeight - 200, newHeight));
+                    $('.search-panel').css('height', newHeight + 'px');
+                }
+            });
+
+            $(document).on('mouseup', function() {
+                if (isResizingLeft || isResizingRight || isResizingBottom || isResizingSearchTree) {
+                    $(document.body).removeClass('no-select');
+                    updateViews();
+                    isResizingLeft = false;
+                    isResizingRight = false;
+                    isResizingBottom = false;
+                    isResizingSearchTree = false;
+                }
+            });
+
+            function updateViews() {
+                if(vizcore && vizcore.Renderer) {
+                    vizcore.Renderer.Resize();
+                }
+                if(vizcore2 && vizcore2.Renderer) {
+                    vizcore2.Renderer.Resize();
+                }
+                if(vizcore3 && vizcore3.Renderer) {
+                    vizcore3.Renderer.Resize();
+                }
+                if(vizcore4 && vizcore4.Renderer) {
+                    vizcore4.Renderer.Resize();
+                }
+            }
+
+            // Tree View 클릭 이벤트
+            $('.tree-item').on('click', function() {
+                $('.tree-item').removeClass('selected');
+                $(this).addClass('selected');
+                const itemName = $(this).text();
+                addLog('Tree 항목 선택: ' + itemName, 'info');
+            });
+
+            // Console Clear 버튼
+            $('.console-clear-btn').on('click', function() {
+                $('.console-content').empty();
+                addLog('콘솔이 초기화되었습니다.', 'info');
+            });
+
+            // 메뉴바 클릭 이벤트
+            $('.menu-item').on('click', function() {
+                const menuText = $(this).text();
+                addLog('메뉴 클릭: ' + menuText, 'info');
+            });
+
+            // 검색 버튼 클릭 이벤트
+            $('.search-button').on('click', function() {
+                const hoseon = $('#hoseon').val();
+                const block = $('#block').val();
+                const drawing = $('#drawing').val();
+                
+                let searchParams = [];
+                if (hoseon) searchParams.push('호선: ' + hoseon);
+                if (block) searchParams.push('블럭: ' + block);
+                if (drawing) searchParams.push('도면번호: ' + drawing);
+                
+                if (searchParams.length > 0) {
+                    addLog('검색 실행 - ' + searchParams.join(', '), 'info');
+                } else {
+                    addLog('검색 조건을 입력해주세요.', 'warning');
+                }
+                selectBlock();
+            });
+
+            // Enter 키로 검색
+            $('.search-form input').on('keypress', function(e) {
+                if (e.which === 13) {
+                    $('.search-button').click();
+                }
+            });
+
+            // 초기 로그
+            addLog('애플리케이션이 시작되었습니다.', 'info');
+        });
+
+        async function selectBlock() {
+            const block =  "AYF201";
+
+
+            const res = await fetch('http://192.168.10.12:4000/api/auth/getBlockTree', {
+                method: 'POST',
+                headers: {
+                'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ block })
+            });
+
+            const data = await res.json();
+
+            // 기존 트리 제거
+            $('#jstree').jstree('destroy');
+
+            // 새 트리 생성
+            $('#jstree')
+                .jstree({
+                core: { data: data },
+                plugins: ['checkbox', 'state', 'contextmenu' ,'types'],
+                types: {
+                    'document': { 'icon': '📄' },
+                    'folder': { 'icon': '📁' }
+                },
+                'contextmenu': {
+                'items': function (node) {
+                    const tree = $('#jstree').jstree(true);
+                    const items = {
+                    depItem: {
+                        label: "📑 DAP 도면",
+                        // icon: "🔍", 
+                        action: function () {
+                        //displayGLBTable("view2", 4);
+                        vizcore4.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted3);
+                        cbAdd2DNote();
+                        }
+                    },       
+                    
+                    renameItem: {
+                        label: "🔍 Top Plan View",
+                        // icon: "🔍", 
+                        action: function () {
+                        // tree.edit(node);
+                        vizcore2.View.ViewTopPlan();
+                        //vizcore2.Draw();
+                        // const container = document.getElementById('view2');
+                        // container.innerHTML = `<embed src="1.pdf" type="application/pdf" width="100%" height="100%">`;
+                        }
+                    },
+                    deleteItem: {
+                        label: "🗑️ 삭제",
+                        // icon: "🗑️", 
+                        "separator_before": true,
+                        "_disabled": (node.id === '1'), // Root node는 비활성화
+                        action: function () {
+                        tree.delete_node(node);
+                        }
+                    },
+                    propertyItem: {
+                        label: "⚙️ 속성보기",
+                        // icon: "⚙️",
+                        action: function () {
+                        const nodeData = tree.get_node(node);
+                        const modal = document.getElementById("propertyModal");
+                        const content = document.getElementById("propertyContent");
+                        const closeBtn = modal.querySelector(".close");
+
+                        // 노드 정보 표시
+                        content.innerHTML = `
+                            <iframe src="property-tabs.html" style="width: 100%; height: 100%; border: none;"  id="rightIframe" > </iframe>
+                        `;
+
+                        // 모달 열기
+                        modal.style.display = "block";
+
+                        // 닫기 버튼 이벤트
+                        closeBtn.onclick = function () {
+                            modal.style.display = "none";
+                        };
+
+                        // 바깥 클릭 시 닫기
+                        window.onclick = function (event) {
+                            if (event.target === modal) {
+                            modal.style.display = "none";
+                            }
+                        };
+
+                        }
+                    }
+                    };
+
+                    // 폴더는 삭제 금지
+                    if (node.type === 'folder') {
+                    delete items.deleteItem;
+                    }
+
+                    return items;
+                }
+                }
+
+                })
+                .on('ready.jstree', function () {
+                $(this).jstree('open_all');
+                })
+                .on('select_node.jstree', async function (e, selected) {
+                    const node = selected.node;
+                //   logToConsole(`노드 선택: ${node.text}`, "warning");
+                    vizcore.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample", onModelLoadingCompleted0);
+                    vizcore2.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted);
+                    vizcore3.Model.OpenHeader("VIZCore3D/Model/F201/F201_wh.vizw", "Sample",onModelLoadingCompleted2);
+                });
+
+            console.log(data);
+    }
+    </script>
+</head>
+<body>
+<div class="main-layout">
+    <!-- 상단 메뉴바 -->
+    <div class="menu-bar">
+        <div class="menu-item">File</div>
+        <div class="menu-item">Edit</div>
+        <div class="menu-item">View</div>
+        <div class="menu-item">Tools</div>
+        <div class="menu-item">Help</div>
+    </div>
+
+    <!-- 중간 컨텐츠 영역 -->
+    <div class="content-wrapper">
+        <!-- 왼쪽 Tree View Panel -->
+        <div class="left-panel">
+            <div class="left-resize-handle"></div>
+            
+            <!-- 검색 폼 영역 -->
+            <div class="search-panel">
+                <div class="search-tree-divider"></div>
+                <div class="search-panel-header">검색</div>
+                <div class="search-form">
+                    <div class="form-group">
+                        <label for="hoseon">호선</label>
+                        <input type="text" id="hoseon" placeholder="호선 입력">
+                    </div>
+                    <div class="form-group">
+                        <label for="block">블럭</label>
+                        <input type="text" id="block" placeholder="F213P 블럭 입력">
+                    </div>
+                    <div class="form-group">
+                        <label for="drawing">도면번호</label>
+                        <input type="text" id="drawing" placeholder="도면번호 입력">
+                    </div>
+                    <button class="search-button">검색</button>
+                </div>
+            </div>
+
+            <!-- 모델 트리 영역 -->
+            <div class="tree-panel">
+                <div class="tree-panel-header">Model Tree</div>
+                
+                    <!-- Tree 구조가 여기에 동적으로 생성됩니다. -->
+                <div class="tree-view">
+                    <div class="tree-view" id="jstree"></div>
+                    <!-- <div class="tree-view" ></div>
+                    <div class="tree-item">📁 Root</div>
+                    <div class="tree-item" style="padding-left: 25px;">📁 Assembly 1</div>
+                    <div class="tree-item" style="padding-left: 45px;">📄 Part A</div>
+                    <div class="tree-item" style="padding-left: 45px;">📄 Part B</div>
+                    <div class="tree-item" style="padding-left: 25px;">📁 Assembly 2</div>
+                    <div class="tree-item" style="padding-left: 45px;">📄 Part C</div>
+                    <div class="tree-item" style="padding-left: 45px;">📄 Part D</div>
+                    <div class="tree-item">📁 Components</div>
+                    <div class="tree-item" style="padding-left: 25px;">📄 Component 1</div>
+                    <div class="tree-item" style="padding-left: 25px;">📄 Component 2</div> -->
+                </div>
+            </div>
+        </div>
+
+        <!-- 중앙 3D 뷰 컨테이너 -->
+        <div class="center-panel">
+            <div class="VIZWeb_Container">
+                <div class="VIZWeb_Main"><div id="view"></div></div>
+                <div class="VIZWeb_Main_Multi"><div id="view2"></div></div>
+                <div class="VIZWeb_Main_Third"><div id="view3"></div></div>
+                <div class="VIZWeb_Main_Fourth"><div id="view4"></div></div>
+                
+                <!-- Resize Dividers for 3D Views -->
+                <div class="vertical-divider"></div>
+                <div class="horizontal-divider"></div>
+            </div>
+        </div>
+
+        <!-- 우측 Property Panel -->
+        <div class="right-panel">
+            <div class="right-resize-handle"></div>
+            <div class="right-panel-header">Properties</div>
+            
+            <div class="property-group">
+                <h3>Object Information</h3>
+                <div class="property-item">
+                    <span class="property-label">Name:</span>
+                    <span class="property-value">Sample Model</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Type:</span>
+                    <span class="property-value">3D Assembly</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Parts:</span>
+                    <span class="property-value">142</span>
+                </div>
+            </div>
+
+            <div class="property-group">
+                <h3>Transform</h3>
+                <div class="property-item">
+                    <span class="property-label">Position X:</span>
+                    <span class="property-value">0.0</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Position Y:</span>
+                    <span class="property-value">0.0</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Position Z:</span>
+                    <span class="property-value">0.0</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Rotation:</span>
+                    <span class="property-value">0°</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Scale:</span>
+                    <span class="property-value">1.0</span>
+                </div>
+            </div>
+
+            <div class="property-group">
+                <h3>Material</h3>
+                <div class="property-item">
+                    <span class="property-label">Color:</span>
+                    <span class="property-value">Gray</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Opacity:</span>
+                    <span class="property-value">100%</span>
+                </div>
+                <div class="property-item">
+                    <span class="property-label">Metallic:</span>
+                    <span class="property-value">0.5</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 하단 Console Panel -->
+    <div class="bottom-panel">
+        <div class="bottom-resize-handle"></div>
+        <div class="console-header">
+            <span>Console</span>
+            <button class="console-clear-btn">Clear</button>
+        </div>
+        <div class="console-content">
+        </div>
+    </div>
+
+
+</div>
+        <!-- 모달 팝업 -->
+    <div id="propertyModal" class="modal">
+      <div class="modal-content">
+        <span class="close">&times;</span>
+        <h3> ⚙️ 속성 보기</h3>
+        <div id="propertyContent">여기에 속성 정보가 표시됩니다.</div>
+      </div>
+    </div>
+</body>
+</html>

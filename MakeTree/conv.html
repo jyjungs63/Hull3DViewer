@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>탭을 슬래시로 변환</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+        }
+        .textarea-wrapper {
+            margin: 20px 0;
+        }
+        textarea {
+            width: 100%;
+            height: 200px;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 4px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            resize: vertical;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            display: block;
+            margin: 20px auto;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        .info {
+            background-color: #e7f3ff;
+            padding: 15px;
+            border-left: 4px solid #2196F3;
+            margin: 20px 0;
+        }
+        label {
+            font-weight: bold;
+            color: #555;
+            display: block;
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📝 탭(Tab)을 슬래시(/)로 변환</h1>
+        
+        <div class="info">
+            <strong>사용 방법:</strong>
+            <ol>
+                <li>아래 입력 영역에 탭으로 구분된 데이터를 붙여넣으세요</li>
+                <li>"변환하기" 버튼을 클릭하세요</li>
+                <li>결과를 복사하여 사용하세요</li>
+            </ol>
+        </div>
+
+        <div class="textarea-wrapper">
+            <label for="input">입력 (탭으로 구분된 데이터):</label>
+            <textarea id="input" placeholder="예시:&#10;(대조/중조/소조)&#9;Part&#9;name&#10;/AYF201/A110B/F210C&#9;F201_DK3-1SP&#9;HPLATE idsp 2001 of HPANEL /F201_DK3"></textarea>
+        </div>
+
+        <button onclick="convertData()">🔄 변환하기</button>
+
+        <div class="textarea-wrapper">
+            <label for="output">출력 (슬래시로 연결된 데이터):</label>
+            <textarea id="output" placeholder="변환된 결과가 여기에 표시됩니다..." readonly></textarea>
+        </div>
+
+        <button onclick="copyResult()" style="background-color: #2196F3;">📋 결과 복사</button>
+    </div>
+
+    <script>
+        function convertData() {
+            const input = document.getElementById('input').value;
+            
+            if (!input.trim()) {
+                alert('변환할 데이터를 입력해주세요!');
+                return;
+            }
+
+            // 각 라인을 처리
+            const lines = input.split('\n');
+            const result = lines.map(line => {
+                // 탭을 슬래시로 교체
+                return line.replace(/\t/g, '\\');
+            }).join('\n');
+
+            document.getElementById('output').value = result;
+            
+            // 통계 표시
+            const inputLines = lines.filter(l => l.trim()).length;
+            alert(`✅ 변환 완료!\n${inputLines}개 라인이 변환되었습니다.`);
+        }
+
+        function copyResult() {
+            const output = document.getElementById('output');
+            
+            if (!output.value.trim()) {
+                alert('먼저 데이터를 변환해주세요!');
+                return;
+            }
+
+            output.select();
+            document.execCommand('copy');
+            alert('📋 결과가 클립보드에 복사되었습니다!');
+        }
+
+        // 샘플 데이터 자동 로드 (선택사항)
+        window.onload = function() {
+            const sampleData = `(대조/중조/소조)\tPart\tname
+/AYF201/A110B/F210C\tF201_DK3-1SP\tHPLATE idsp 2001 of HPANEL /F201_DK3
+/AYF201/A110B/F210C\tF201_DK3-2SP\tHPLATE idsp 2002 of HPANEL /F201_DK3`;
+            
+            // document.getElementById('input').value = sampleData;  // 샘플 자동 로드시 주석 해제
+        };
+    </script>
+</body>
+</html>

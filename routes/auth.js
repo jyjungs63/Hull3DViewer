@@ -193,6 +193,48 @@ router.get('/me', async (req, res) => {
 });
 
 // 트리 구조로 변환하는 함수
+function buildTree2(data, parentId = null) {
+  return data
+    .filter(item => item.parent_path === parentId)
+    .map(item => ({
+      id: item.id,
+      text: item.node_name,
+      desc: item.description,
+      children: buildTree2(data, item.full_path)
+    }));
+}
+
+
+router.post('/getBlockTree2', async (req, res) => {
+  try {
+    const { block } = req.body;
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT id, full_path, parent_path, node_name FROM tree_path_enum');
+    conn.release();
+
+    const tree = buildTree2(rows[0]);
+    res.json(tree);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
+
+router.get('/getBlockTreeGet', async (req, res) => {
+  try {
+    const { block } = req.query;  // ✅ GET은 req.query 사용
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT id,full_path, parent_path, node_name , description FROM tree_path_enum');
+    conn.release();
+
+    const tree = buildTree2(rows[0]);
+    res.json(tree);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
+
 function buildTree(data, parentId = null) {
   return data
     .filter(item => item.parent_id === parentId)
@@ -218,5 +260,18 @@ router.post('/getBlockTree', async (req, res) => {
     res.status(500).send('DB 오류');
   }
 });
+router.get('/getBlockTreeGet2', async (req, res) => {
+  try {
+    const { block } = req.query;;
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT id, parent_id, text FROM tree_nodes WHERE block = ?', [block]);
+    conn.release();
 
+    const tree = buildTree(rows[0]);
+    res.json(tree);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
 module.exports = router;

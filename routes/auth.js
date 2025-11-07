@@ -200,6 +200,8 @@ function buildTree2(data, parentId = null) {
       id: item.id,
       text: item.node_name,
       desc: item.description,
+      level: item.node_level,
+      leaf: item.is_leaf,
       children: buildTree2(data, item.full_path)
     }));
 }
@@ -209,7 +211,7 @@ router.post('/getBlockTree2', async (req, res) => {
   try {
     const { block } = req.body;
     const conn = await pool.getConnection();
-    const rows = await conn.query('SELECT id, full_path, parent_path, node_name FROM tree_path_enum');
+    const rows = await conn.query('SELECT id, full_path, parent_path, node_name, description,node_level,is_leaf FROM tree_path_enum');
     conn.release();
 
     const tree = buildTree2(rows[0]);
@@ -224,7 +226,7 @@ router.get('/getBlockTreeGet', async (req, res) => {
   try {
     const { block } = req.query;  // ✅ GET은 req.query 사용
     const conn = await pool.getConnection();
-    const rows = await conn.query('SELECT id,full_path, parent_path, node_name , description FROM tree_path_enum');
+    const rows = await conn.query('SELECT id,full_path, parent_path, node_name , description,node_level,is_leaf  FROM tree_path_enum');
     conn.release();
 
     const tree = buildTree2(rows[0]);

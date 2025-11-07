@@ -222,6 +222,34 @@ router.post('/getBlockTree2', async (req, res) => {
   }
 });
 
+router.get('/getBom', async (req, res) => {
+  try {
+    const { name } = req.query;
+    // const { name } = req.body;
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT  * FROM material_list WHERE name = ?', [name]);
+    conn.release();
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
+
+router.post('/getBomPost', async (req, res) => {
+  try {
+    // const { name } = req.query;
+    const { name } = req.body;
+    const conn = await pool.getConnection();
+    const rows = await conn.query('SELECT  * FROM material_list WHERE name = ?', [name]);
+    conn.release();
+    res.json(rows[0]);
+  } catch (err) {
+    console.error(err);
+    res.status(500).send('DB 오류');
+  }
+});
+
 router.get('/getBlockTreeGet', async (req, res) => {
   try {
     const { block } = req.query;  // ✅ GET은 req.query 사용

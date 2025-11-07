@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CAD Property Sheet</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            overflow-y: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: #f8f9fa;
+            height: 100vh;
+            overflow: hidden;
+
+        }
+
+        .property-container {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+            overflow-y: hidden;
+        }
+
+        .tab-header {
+            display: flex;
+            background: #e9ecef;
+            border-bottom: 2px solid #dee2e6;
+            padding: 0;
+        }
+
+        .tab-button {
+            flex: 1;
+            padding: 12px 20px;
+            background: #e9ecef;
+            border: none;
+            border-right: 1px solid #dee2e6;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            color: #495057;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .tab-button:last-child {
+            border-right: none;
+        }
+
+        .tab-button:hover {
+            background: #dee2e6;
+            color: #212529;
+        }
+
+        .tab-button.active {
+            background: #fff;
+            color: #2c3e50;
+            border-bottom: 3px solid #3498db;
+        }
+
+        .tab-button.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: #3498db;
+        }
+
+        .tab-content {
+            flex: 1;
+            overflow-y: auto;
+            background: #fff;
+            padding: 15px;
+        }
+
+        .tab-pane {
+            display: none;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .tab-pane.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .property-group {
+            margin-bottom: 20px;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .property-group-header {
+            background: #f8f9fa;
+            padding: 10px 15px;
+            font-weight: 600;
+            color: #2c3e50;
+            border-bottom: 1px solid #e9ecef;
+            font-size: 13px;
+        }
+
+        .property-row {
+            display: flex;
+            padding: 8px 15px;
+            border-bottom: 1px solid #f1f3f5;
+            font-size: 13px;
+        }
+
+        .property-row:last-child {
+            border-bottom: none;
+        }
+
+        .property-row:hover {
+            background: #f8f9fa;
+        }
+
+        .property-label {
+            flex: 0 0 140px;
+            font-weight: 500;
+            color: #495057;
+            padding-right: 10px;
+        }
+
+        .property-value {
+            flex: 1;
+            color: #212529;
+        }
+
+        .property-value input,
+        .property-value select {
+            width: 100%;
+            padding: 4px 8px;
+            border: 1px solid #ced4da;
+            border-radius: 3px;
+            font-size: 12px;
+        }
+
+        .property-value input:focus,
+        .property-value select:focus {
+            outline: none;
+            border-color: #3498db;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #868e96;
+        }
+
+        .empty-state svg {
+            width: 64px;
+            height: 64px;
+            margin-bottom: 15px;
+            opacity: 0.3;
+        }
+
+        /* 스크롤바 스타일 */
+        .tab-content::-webkit-scrollbar {
+            width: 8px;
+        }
+
+        .tab-content::-webkit-scrollbar-track {
+            background: #f1f3f5;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb {
+            background: #adb5bd;
+            border-radius: 4px;
+        }
+
+        .tab-content::-webkit-scrollbar-thumb:hover {
+            background: #868e96;
+        }
+    </style>
+</head>
+<body>
+    <div class="property-container">
+        <div class="tab-header">
+            <button class="tab-button active" onclick="switchTab(event, 'general')">
+                📋 General
+            </button>
+            <button class="tab-button" onclick="switchTab(event, 'geometry')">
+                📐 Geometry
+            </button>
+            <button class="tab-button" onclick="switchTab(event, 'material')">
+                🎨 Material
+            </button>
+        </div>
+
+        <div class="tab-content">
+            <div id="general" class="tab-pane active">
+                <div class="property-group">
+                    <div class="property-group-header">기본 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">객체 이름</div>
+                        <div class="property-value">
+                            <input type="text" id="prop-name" readonly>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">객체 타입</div>
+                        <div class="property-value" id="prop-type"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">레이어</div>
+                        <div class="property-value">
+                            <select id="prop-layer">
+                                <option>HULL</option>
+                                <option>DECK</option>
+                                <option>BULKHEAD</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">선박 번호 (Ship No)</div>
+                        <div class="property-value" id="prop-shipno"></div>
+                    </div>
+                </div>
+
+                <div class="property-group">
+                    <div class="property-group-header">상태 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">도면 설명 (Comment)</div>
+                        <div class="property-value" id="prop-comment"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">수량/규격 (Quantity)</div>
+                        <div class="property-value" id="prop-quantity"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">제조 품질 (Qual)</div>
+                        <div class="property-value" id="prop-manufac-qual"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">배치 번호 (Pos No)</div>
+                        <div class="property-value" id="prop-pos-no"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div id="geometry" class="tab-pane">
+                <div class="property-group">
+                    <div class="property-group-header">중심 위치 (CoG)</div>
+                    <div class="property-row">
+                        <div class="property-label">X 좌표</div>
+                        <div class="property-value">
+                            <input type="number" id="prop-cog-x" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Y 좌표</div>
+                        <div class="property-value">
+                            <input type="number" id="prop-cog-y" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">Z 좌표</div>
+                        <div class="property-value">
+                            <input type="number" id="prop-cog-z" step="0.01"> mm
+                        </div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">설명</div>
+                        <div class="property-value" id="prop-description"></div>
+                    </div>
+                </div>
+
+                <div class="empty-state">
+                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm-1-8a1 1 0 002 0V7a1 1 0 10-2 0v3zm-1.5 5.5a1 1 0 103 0 1 1 0 00-3 0z" clip-rule="evenodd"></path>
+                    </svg>
+                    <p>위치/회전 정보는 3D 모델링 데이터에 따라 다릅니다.</p>
+                </div>
+            </div>
+
+            <div id="material" class="tab-pane">
+                <div class="property-group">
+                    <div class="property-group-header">중량 정보</div>
+                    <div class="property-row">
+                        <div class="property-label">총 중량 (Weight)</div>
+                        <div class="property-value" id="prop-weight"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">객체 타입</div>
+                        <div class="property-value" id="prop-m-type"></div>
+                    </div>
+                    <div class="property-row">
+                        <div class="property-label">규격 (Thickness/Size)</div>
+                        <div class="property-value" id="prop-m-quantity"></div>
+                    </div>
+                </div>
+                
+                <div class="empty-state">
+                    <svg fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 6a1 1 0 011-1h10a1 1 0 011 1v10a1 1 0 01-1 1H5a1 1 0 01-1-1V6z" clip-rule="evenodd" fill-rule="evenodd"></path>
+                    </svg>
+                    <p>재질 및 코팅 정보는 추가 데이터가 필요합니다.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 제공된 JSON 데이터
+        const itemData = {
+            "shipno": "1000",
+            "name": "F201_WEB145_05-1P",
+            "type": "Plate",
+            "description": "Unset",
+            "quantity": "850x1549x12",
+            "manufac_qual": "A",
+            "pos_no": 14,
+            "weight": "72.13",
+            "cog_x": "590.00",
+            "cog_y": "-752.00",
+            "cog_z": "-6.00",
+            "comment": "Unset"
+        };
+        
+        // --- 데이터 바인딩 함수 ---
+        function updatePropertySheet(data) {
+            if (!data) {
+                console.error("데이터가 제공되지 않았습니다.");
+                return;
+            }
+
+            // General Tab 업데이트
+            document.getElementById('prop-name').value = data.name || '';
+            document.getElementById('prop-type').textContent = data.type || '';
+            document.getElementById('prop-shipno').textContent = data.shipno || '';
+            document.getElementById('prop-comment').textContent = data.comment || '';
+            document.getElementById('prop-quantity').textContent = data.quantity || '';
+            document.getElementById('prop-manufac-qual').textContent = data.manufac_qual || '';
+            document.getElementById('prop-pos-no').textContent = data.pos_no || '';
+
+            // Geometry Tab (CoG) 업데이트
+            document.getElementById('prop-cog-x').value = parseFloat(data.cog_x).toFixed(2) || '0.00';
+            document.getElementById('prop-cog-y').value = parseFloat(data.cog_y).toFixed(2) || '0.00';
+            document.getElementById('prop-cog-z').value = parseFloat(data.cog_z).toFixed(2) || '0.00';
+            document.getElementById('prop-description').textContent = data.description || '';
+
+
+            // Material Tab 업데이트
+            document.getElementById('prop-weight').textContent = (parseFloat(data.weight) || 0).toFixed(2) + ' kg';
+            document.getElementById('prop-m-type').textContent = data.type || '';
+            document.getElementById('prop-m-quantity').textContent = data.quantity || '';
+
+            // '레이어' 드롭다운의 기본값 설정 (일반적으로 DB에 저장된 값이 있다면 설정)
+            // 여기서는 기본값이 없으므로 변경하지 않음
+        }
+
+        function switchTab(event, tabName) {
+            // 모든 탭 버튼에서 active 클래스 제거
+            const tabButtons = document.querySelectorAll('.tab-button');
+            tabButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+
+            // 모든 탭 컨텐츠 숨기기
+            const tabPanes = document.querySelectorAll('.tab-pane');
+            tabPanes.forEach(pane => {
+                pane.classList.remove('active');
+            });
+
+            // 클릭된 탭 버튼에 active 클래스 추가
+            event.currentTarget.classList.add('active');
+
+            // 선택된 탭 컨텐츠 표시
+            document.getElementById(tabName).classList.add('active');
+        }
+
+        // 입력 필드 변경 감지 (기존과 동일)
+        document.addEventListener('DOMContentLoaded', () => {
+             // 페이지 로드 시 데이터 로딩
+            updatePropertySheet(itemData);
+            
+            document.querySelectorAll('input, select').forEach(element => {
+                element.addEventListener('change', function() {
+                    console.log(`Property changed: ${this.value}`);
+                    // 여기에 변경사항을 처리하는 로직 추가
+                });
+            });
+        });
+    </script>
+</body>
+</html>
